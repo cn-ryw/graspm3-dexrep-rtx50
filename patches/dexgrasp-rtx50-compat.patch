@@ -1,0 +1,309 @@
+diff --git a/ActionDiffusion/bc/dataset/graspm3_dexrep.py b/ActionDiffusion/bc/dataset/graspm3_dexrep.py
+index 022494d..235f16d 100644
+--- a/ActionDiffusion/bc/dataset/graspm3_dexrep.py
++++ b/ActionDiffusion/bc/dataset/graspm3_dexrep.py
+@@ -100,9 +100,10 @@ class GraspM3DexRepDataset(Dataset):
+             file_path_list = ['core-bottle-a02a1255256fbe01c9292f26f73f6538.npy']
+ 
+ 
+-        obj_id_list =[osp.basename(path) for path in file_path_list]
+-        if args.train_obj_code_list is not None and ds_name=='train':
+-            obj_id_list =[code_name+'.npy' for code_name in args.train_obj_code_list]
++        obj_id_list =[osp.basename(path) for path in file_path_list]
++        selected_objects = args.get('train_obj_code_list') if ds_name == 'train' else args.get('test_obj_code_list')
++        if selected_objects is not None:
++            obj_id_list =[code_name+'.npy' for code_name in selected_objects]
+         a=1
+ 
+ 
+@@ -232,14 +233,30 @@ class GraspM3DexRepDataset(Dataset):
+             item['obj_code'] = obj_name
+             return item
+ 
+-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+-            futures = {executor.submit(load_one, file_name): file_name for file_name in obj_id_list}
+-            for future in tqdm(as_completed(futures), total=len(futures), desc="Multi-threaded loading"):
+-                result = future.result()
+-                if result is not None:
+-                    all_results.append(result)
+-                if sum(len(d['grasp_seqs']) for d in all_results if 'grasp_seqs' in d) >= target_seq_num:
+-                    break
++        loaded_sequences = 0
++        progress = tqdm(total=len(obj_id_list), desc="Deterministic loading")
++        try:
++            for start in range(0, len(obj_id_list), max_workers):
++                chunk = obj_id_list[start:start + max_workers]
++                with ThreadPoolExecutor(max_workers=max_workers) as executor:
++                    chunk_results = list(executor.map(load_one, chunk))
++                progress.update(len(chunk))
++                for result in chunk_results:
++                    if result is None:
++                        continue
++                    all_results.append(result)
++                    loaded_sequences += len(result.get('grasp_seqs', []))
++                    if loaded_sequences >= target_seq_num:
++                        break
++                if loaded_sequences >= target_seq_num:
++                    break
++        finally:
++            progress.close()
++
++        if not all_results:
++            raise RuntimeError(
++                "No valid GraspM3 records were loaded from {}".format(self.data_dir)
++            )
+ 
+         data_store = {key: [] for key in ['obs', 'vis_unscale_actions', 'obj_code_idx',
+                                           'grasp_seqs', 'hand_pcds', 'obj_pcds']}
+@@ -257,9 +274,10 @@ class GraspM3DexRepDataset(Dataset):
+                 elif key in item:
+                     data_store[key].append(item[key])
+ 
+-        for key, val in data_store.items():
+-            val = np.concatenate(val, axis=0)
+-            if key != 'obj_code_idx' and self.is_flat:
++        for key, val in data_store.items():
++            val = np.concatenate(val, axis=0)
++            val = val[:target_seq_num]
++            if key != 'obj_code_idx' and self.is_flat:
+                 N, T = val.shape[:2]
+                 val = val.reshape(N * T, *val.shape[2:])  # (N*T, ...)
+             if key != 'obj_code_idx' and self.is_pad and self.args.n_obs_steps > 1:
+diff --git a/dexgrasp/bc_env_infer.py b/dexgrasp/bc_env_infer.py
+index e814249..16e44ec 100644
+--- a/dexgrasp/bc_env_infer.py
++++ b/dexgrasp/bc_env_infer.py
+@@ -45,7 +45,11 @@ def create_bc_model(base_path):
+ 
+     bc_model = LitBCModel(bc_args, env_args.env)
+     bc_model = bc_model.to(args.rl_device)
+-    bc_args.policy.checkpoints = osp.join(base_path, bc_args.policy.checkpoints.split('DexRep_Isaac_ijrr/')[-1])
++    runtime_checkpoint = os.environ.get('DEXGRASP_CHECKPOINT')
++    if runtime_checkpoint:
++        bc_args.policy.checkpoints = runtime_checkpoint
++    else:
++        bc_args.policy.checkpoints = osp.join(base_path, bc_args.policy.checkpoints.split('DexRep_Isaac_ijrr/')[-1])
+     ckpt = torch.load(bc_args.policy.checkpoints, map_location=torch.device(args.rl_device))
+     bc_model.load_state_dict(ckpt['state_dict'])
+ 
+@@ -87,16 +91,24 @@ def run(mode='seen'):
+     print('---------------------finish {}--------------------------\n'.format(bc_info_name))
+ 
+ 
+-if __name__ == '__main__':
+-    args = get_args()
+-    cfg, cfg_train, logdir = load_cfg(args)
+-    agent_index = get_AgentIndex(cfg)
+-
+-    if cfg['env']['obj_type'] == 'seen':
+-        info = np.load('./train_file_names.npy', allow_pickle=True).item()
+-        cfg['env']['seen_object_code_dict'] = info['train_obj_num_1h']
+-    elif cfg['env']['obj_type'] == 'one':
+-        cfg['env']['seen_object_code_dict'] = ['core-bottle-a02a1255256fbe01c9292f26f73f6538']
+-        cfg['env']['infer_batch_size'] = 1
+-
+-    run(mode=cfg['env']['obj_type'])
++if __name__ == '__main__':
++    args = get_args()
++    cfg, cfg_train, logdir = load_cfg(args)
++    agent_index = get_AgentIndex(cfg)
++
++    runtime_objects = [
++        item for item in os.environ.get('DEXGRASP_INFER_OBJECTS', '').split(',') if item
++    ]
++
++    if cfg['env']['obj_type'] == 'seen':
++        info = np.load('./train_file_names.npy', allow_pickle=True).item()
++        cfg['env']['seen_object_code_dict'] = info['train_obj_num_1h']
++    elif cfg['env']['obj_type'] == 'one':
++        cfg['env']['seen_object_code_dict'] = ['core-bottle-a02a1255256fbe01c9292f26f73f6538']
++        cfg['env']['infer_batch_size'] = 1
++
++    if runtime_objects:
++        cfg['env']['seen_object_code_dict'] = runtime_objects
++        cfg['env']['infer_batch_size'] = int(os.environ.get('DEXGRASP_INFER_BATCH_SIZE', '1'))
++
++    run(mode=cfg['env']['obj_type'])
+diff --git a/dexgrasp/data_preprocess.py b/dexgrasp/data_preprocess.py
+index 4d54bff..797b75b 100644
+--- a/dexgrasp/data_preprocess.py
++++ b/dexgrasp/data_preprocess.py
+@@ -91,9 +91,9 @@ def worker_run(args, proc_id, npy_list, cfg, cfg_train,sim_params, agent_index,
+         total_successes.append(mean_success.data)
+         print(f"Success Rate: {mean_success}")
+ 
+-        # save obs and actions
+-        if save_npy:
+-            np.save(f"./{folder_name}/{task.object_code_list[obj_id]}.npy", save_dict)
++        # save obs and actions
++        if save_npy:
++            np.save(os.path.join(folder_name, task.object_code_list[obj_id] + ".npy"), save_dict)
+ 
+     env.task.clean_sim()
+     del env, task
+@@ -103,15 +103,15 @@ def worker_run(args, proc_id, npy_list, cfg, cfg_train,sim_params, agent_index,
+     a=1
+     return all_data
+ 
+-def data_preprocess_online(data):
++def data_preprocess_online(data):
+     set_np_formatting()
+ 
+     args = get_args()
+     # args.task = "ShadowHandGraspDexRepIjrr2"
+     # args.algo = "ppo1"
+     args.seed = 0
+-    args.rl_device = "cuda:0"
+-    args.sim_device = "cuda:0"
++    args.rl_device = os.environ.get("DEXGRASP_RL_DEVICE", args.rl_device)
++    args.sim_device = os.environ.get("DEXGRASP_SIM_DEVICE", args.sim_device)
+     args.logdir = "logs/dexrep_dexgrasp"
+     args.headless = True
+ 
+diff --git a/dexgrasp/tasks/shadow_hand_grasp_dexrep_ijrr.py b/dexgrasp/tasks/shadow_hand_grasp_dexrep_ijrr.py
+index ee32ff6..39d44b9 100644
+--- a/dexgrasp/tasks/shadow_hand_grasp_dexrep_ijrr.py
++++ b/dexgrasp/tasks/shadow_hand_grasp_dexrep_ijrr.py
+@@ -162,11 +162,14 @@ class ShadowHandGraspDexRepIjrr(BaseTask):
+             self.obj_trajs_info = self.rl_data_load(trajs_path)
+ 
+         else:
+-            npy_list = []
+-            for obj_id in self.cfg['env']['object_code_dict']:
+-                npy_path = os.path.join(trajs_path, f"{obj_id}.npy")
+-                data = np.load(npy_path, allow_pickle=True).item()
+-                npy_list.append(data)
++            if npy_list is not None:
++                self.cfg['env']['object_code_dict'] = [item['obj_code'] for item in npy_list]
++            else:
++                npy_list = []
++                for obj_id in self.cfg['env']['object_code_dict']:
++                    npy_path = os.path.join(trajs_path, f"{obj_id}.npy")
++                    data = np.load(npy_path, allow_pickle=True).item()
++                    npy_list.append(data)
+             self.batch_load_data_dict(npy_list)
+ 
+         self.obj_trajs_info['grasp_seqs'] = unwrap_euler_batch_vectorized( self.obj_trajs_info['grasp_seqs'])
+diff --git a/dexgrasp/train_bc_lighting_dexrep.py b/dexgrasp/train_bc_lighting_dexrep.py
+index a916829..690992e 100644
+--- a/dexgrasp/train_bc_lighting_dexrep.py
++++ b/dexgrasp/train_bc_lighting_dexrep.py
+@@ -10,7 +10,7 @@ from ActionDiffusion.bc.model.policy.lhm_policy import LitBCModel
+ from pytorch_lightning.callbacks import ModelCheckpoint, Callback, LearningRateMonitor
+ from torch.utils.data import Dataset, DataLoader
+ from ActionDiffusion.bc.dataset.graspm3_dexrep import GraspM3DexRepDataset
+-class BCTrainer:
++class BCTrainer:
+     def __init__(self, args,env_args,  train_loader=None,test_loader=None):
+         self.args = args
+         self.env_args = env_args
+@@ -21,25 +21,53 @@ class BCTrainer:
+         # self.bc_model.load_state_dict(ckpt['state_dict'])
+         # a=1
+ 
+-    def train(self, ckpt_path=None):
+-
+-        callback = ModelCheckpoint(dirpath=self.args.exp_dir, filename='{step}',
+-                                   save_top_k=-1, save_last=True, every_n_train_steps=50000)
+-        lr_monitor = LearningRateMonitor(logging_interval='step')
+-        callbacks = [callback, lr_monitor]
+-        trainer = pl.Trainer(accelerator='gpu', devices=-1, precision=32, max_epochs=self.args.num_epochs,
+-                             callbacks=callbacks, log_every_n_steps=5, check_val_every_n_epoch=5,
+-                             default_root_dir=os.path.join(self.args.exp_dir, "tensorboard_logs"))
++    def train(self, ckpt_path=None):
++
++        checkpoint_interval = int(os.environ.get("DEXGRASP_CHECKPOINT_INTERVAL", "50000"))
++        callback = ModelCheckpoint(dirpath=self.args.exp_dir, filename='{step}',
++                                   save_top_k=-1, save_last=True,
++                                   every_n_train_steps=checkpoint_interval)
++        lr_monitor = LearningRateMonitor(logging_interval='step')
++        callbacks = [callback, lr_monitor]
++        accelerator = os.environ.get("DEXGRASP_TRAIN_ACCELERATOR", "gpu")
++        devices = 1 if accelerator == "cpu" else -1
++        validation_interval = int(os.environ.get("DEXGRASP_VALIDATION_INTERVAL", "5"))
++        trainer = pl.Trainer(accelerator=accelerator, devices=devices, precision=32, max_epochs=self.args.num_epochs,
++                             callbacks=callbacks, log_every_n_steps=5,
++                             check_val_every_n_epoch=validation_interval,
++                             default_root_dir=os.path.join(self.args.exp_dir, "tensorboard_logs"))
+ 
+         trainer.fit(model=self.bc_model, train_dataloaders=self.train_loader, ckpt_path=ckpt_path, val_dataloaders=self.test_loader)
+ 
+ 
+-def main(args, env_args):
+-
+-    kstr = 'sim_action' if args.use_sim_action else 'vis_action'
+-
+-    args.task_name = '1obj_seq2000_DexRep_pro100_start_uniform_{}_dsam_mod'.format(kstr)
+-    args.policy.actor_critic = 'ActorCriticDexRep'
++def main(args, env_args):
++
++    kstr = 'sim_action' if args.use_sim_action else 'vis_action'
++
++    if "DEXGRASP_SEED" in os.environ:
++        pl.seed_everything(int(os.environ["DEXGRASP_SEED"]), workers=True)
++
++    args.task_name = os.environ.get(
++        "DEXGRASP_TASK_NAME",
++        '1obj_seq2000_DexRep_pro100_start_uniform_{}_dsam_mod'.format(kstr),
++    )
++    args.exp_dir = os.environ.get("DEXGRASP_EXP_DIR", args.exp_dir)
++    args.num_epochs = int(os.environ.get("DEXGRASP_NUM_EPOCHS", args.num_epochs))
++    args.batch_size = int(os.environ.get("DEXGRASP_BATCH_SIZE", args.batch_size))
++    args.seq_num = int(os.environ.get("DEXGRASP_SEQ_NUM", args.seq_num))
++    args.val_seq_num = int(os.environ.get("DEXGRASP_VAL_SEQ_NUM", args.val_seq_num))
++    num_workers = int(os.environ.get("DEXGRASP_NUM_WORKERS", "4"))
++    args.train_data_dir = os.environ.get("DEXGRASP_TRAIN_DATA_DIR", args.train_data_dir)
++    args.test_data_dir = os.environ.get("DEXGRASP_TEST_DATA_DIR", args.test_data_dir)
++    if "DEXGRASP_TRAIN_OBJECTS" in os.environ:
++        args.train_obj_code_list = [
++            item for item in os.environ["DEXGRASP_TRAIN_OBJECTS"].split(",") if item
++        ]
++    if "DEXGRASP_TEST_OBJECTS" in os.environ:
++        args.test_obj_code_list = [
++            item for item in os.environ["DEXGRASP_TEST_OBJECTS"].split(",") if item
++        ]
++    args.policy.actor_critic = 'ActorCriticDexRep'
+     env_args.env.obs_dim.pop('pnG')
+ 
+     # args.seq_num=100
+@@ -52,8 +80,11 @@ def main(args, env_args):
+     ds_train = GraspM3DexRepDataset(args, ds_name='train')
+     ds_test = GraspM3DexRepDataset(args, ds_name='test')
+ 
+-    train_loader = DataLoader(ds_train, batch_size=args.batch_size, shuffle=True, drop_last=True, num_workers=4, pin_memory=True) #**args.dataloader
+-    test_loader = DataLoader(ds_test, batch_size=args.batch_size, shuffle=False, drop_last=True,num_workers=4, pin_memory=True)
++    pin_memory = os.environ.get("DEXGRASP_PIN_MEMORY", "1") == "1"
++    train_loader = DataLoader(ds_train, batch_size=args.batch_size, shuffle=True, drop_last=True,
++                              num_workers=num_workers, pin_memory=pin_memory) #**args.dataloader
++    test_loader = DataLoader(ds_test, batch_size=args.batch_size, shuffle=False, drop_last=False,
++                             num_workers=num_workers, pin_memory=pin_memory)
+ 
+     trainer = BCTrainer(args,env_args, train_loader, test_loader)
+     trainer.train()
+diff --git a/dexgrasp/utils/hand_model.py b/dexgrasp/utils/hand_model.py
+index f3d6f6e..f2bfd8e 100644
+--- a/dexgrasp/utils/hand_model.py
++++ b/dexgrasp/utils/hand_model.py
+@@ -14,7 +14,21 @@ import plotly.graph_objects as go
+ import pytorch3d.structures
+ import pytorch3d.ops
+ import trimesh as tm
+-from torchsdf import index_vertices_by_faces, compute_sdf
++try:
++    from torchsdf import index_vertices_by_faces, compute_sdf
++except ImportError:
++    # TorchSDF's legacy CUDA extension cannot be built for the RTX 50-series
++    # with the project's pinned CUDA 11.3 toolchain.  Gate C inference only
++    # needs face indexing while constructing the CPU hand model, so keep that
++    # operation available without silently approximating signed distances.
++    def index_vertices_by_faces(vertices, faces):
++        return vertices[faces]
++
++    def compute_sdf(*_args, **_kwargs):
++        raise RuntimeError(
++            "TorchSDF is unavailable in the RTX 50-series compatibility "
++            "environment; signed-distance training operations are disabled."
++        )
+ import matplotlib.colors as mcolors
+ class HandModel:
+     def __init__(self, mjcf_path, mesh_path, contact_points_path, penetration_points_path, n_surface_points=0, device='cpu',use_joint21=False):

@@ -1,0 +1,62 @@
+{
+  "core-jar-8ec888ab36f1c5635afa616678601602": {
+    "train": {
+      "action_mae": 0.00832190178334713,
+      "finger_mse": 0.00043627002742141485,
+      "frames": 1120,
+      "orientation_mse": 4.583232293953188e-05,
+      "weighted_bc_loss": 0.008986946257209638,
+      "wrist_mse": 9.147106175078079e-05
+    },
+    "train_sequences": 16,
+    "valid": {
+      "action_mae": 0.030670033767819405,
+      "finger_mse": 0.007164482027292252,
+      "frames": 280,
+      "orientation_mse": 0.002571771154180169,
+      "weighted_bc_loss": 0.041478093480691314,
+      "wrist_mse": 0.0005359032656997442
+    },
+    "valid_sequences": 4
+  },
+  "sem-CellPhone-4e2f684b3cebdbc344f470fdd42caac6": {
+    "train": {
+      "action_mae": 0.0081930635496974,
+      "finger_mse": 0.00028580750222317874,
+      "frames": 700,
+      "orientation_mse": 6.361270789057016e-05,
+      "weighted_bc_loss": 0.008672767478856258,
+      "wrist_mse": 6.514185952255502e-05
+    },
+    "train_sequences": 10,
+    "valid": {
+      "action_mae": 0.1300041824579239,
+      "finger_mse": 0.045091524720191956,
+      "frames": 210,
+      "orientation_mse": 0.016255967319011688,
+      "weighted_bc_loss": 0.2133016735315323,
+      "wrist_mse": 0.010974999517202377
+    },
+    "valid_sequences": 3
+  },
+  "sem-USBStick-e2e75212fefa0ecf30e9a79a761377a4": {
+    "train": {
+      "action_mae": 0.010007408447563648,
+      "finger_mse": 0.0006129276589490473,
+      "frames": 1120,
+      "orientation_mse": 0.00214985734783113,
+      "weighted_bc_loss": 0.012909082026453689,
+      "wrist_mse": 6.944428605493158e-05
+    },
+    "train_sequences": 16,
+    "valid": {
+      "action_mae": 0.04788947105407715,
+      "finger_mse": 0.016368485987186432,
+      "frames": 280,
+      "orientation_mse": 0.0007409602403640747,
+      "weighted_bc_loss": 0.06634596991352737,
+      "wrist_mse": 0.0006735263159498572
+    },
+    "valid_sequences": 4
+  }
+}

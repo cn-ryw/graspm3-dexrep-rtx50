@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Licensed or large local artifacts are never committed.
+dataset/
+meshdata/
+isaacgym/
+*.ckpt
+*.pth
+*.pt
+*.npy
+*.tar
+*.tar.gz
+
+# Generated local output.
+previews/
+output/
+experiments/
+reports/logs/
