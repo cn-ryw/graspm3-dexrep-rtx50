@@ -1,0 +1,6 @@
+dataset_name: one
+detail:
+- - name=core-jar-8ec888ab36f1c5635afa616678601602, N_seq=20, success_num:4.0,success_rate:0.2
+- - name=sem-CellPhone-4e2f684b3cebdbc344f470fdd42caac6, N_seq=20, success_num:0.0,success_rate:0.0
+- - name=sem-USBStick-e2e75212fefa0ecf30e9a79a761377a4, N_seq=20, success_num:7.0,success_rate:0.35
+total_succ_rates: 0.18333333333333335
