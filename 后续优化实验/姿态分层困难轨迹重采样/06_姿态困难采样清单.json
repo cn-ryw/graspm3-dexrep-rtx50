@@ -1,0 +1,1355 @@
+{
+  "description": "Complete-sequence pose balancing multiplied by development-baseline failure weighting; validation sequences and historical holdout are excluded",
+  "development_evidence_sha256": {
+    "experiments/pose-resampling-development-baseline/member_seed_0/cellphone/rollout_metrics.json": "73fb7dfe0b1c60aedaef817a5cfb0208852ebcd83db0b15cc2f5265b3e87cc00",
+    "experiments/pose-resampling-development-baseline/member_seed_0/jar/rollout_metrics.json": "aba94717831ccd45c5352cc6478adceb57e7a5f39d812e1cd725176acfcaf066",
+    "experiments/pose-resampling-development-baseline/member_seed_0/usb_stick/rollout_metrics.json": "af9cc132bbc02fe73aaaf26999378b1ba6f6834662f0cc75c715dfe7c73837ee",
+    "experiments/pose-resampling-development-baseline/member_seed_1/cellphone/rollout_metrics.json": "b9840b7311a986280e204b5e88b0184041e28048acaf974fe582f5b313d79e6b",
+    "experiments/pose-resampling-development-baseline/member_seed_1/jar/rollout_metrics.json": "8516bf954a6e663a771863ab7e93a7b13c9a11872385d733faffd75bf2c2ce0f",
+    "experiments/pose-resampling-development-baseline/member_seed_1/usb_stick/rollout_metrics.json": "09badcd183b64da2175ecd9c294c618382e4be50e3921f580ebc5ef503c226b5",
+    "experiments/pose-resampling-development-baseline/member_seed_2/cellphone/rollout_metrics.json": "81a07d2dbfde78635e24cf5e06028cefe03bdc665e863e534266a86b986e7267",
+    "experiments/pose-resampling-development-baseline/member_seed_2/jar/rollout_metrics.json": "ee9a1e1a8abe6640fb0c70f4e7e9889a0aa701deee3787e42d26178b6c4495e7",
+    "experiments/pose-resampling-development-baseline/member_seed_2/usb_stick/rollout_metrics.json": "e70cb6825fbc040bba11d075741c8edf043901107988ae1a86277a7370724bb9"
+  },
+  "development_manifest": "configs/pose_resampling_development_v1.json",
+  "development_manifest_sha256": "f85068a480d0040fb1654238a272c63e138def44727c1a1884abdec900db8b05",
+  "objects": {
+    "core-jar-8ec888ab36f1c5635afa616678601602": {
+      "object_name": "jar",
+      "pose_strata_count": 2,
+      "pose_stratum_sizes": {
+        "0": 6,
+        "1": 10
+      },
+      "sequence_count": 20,
+      "split_hash": "f67654f278a03c0d5b8db1dc6341b755f9e3f6c27e35129f6d8a19e45c8b1f63",
+      "train_indices": [
+        13,
+        16,
+        3,
+        11,
+        10,
+        8,
+        0,
+        12,
+        7,
+        5,
+        18,
+        17,
+        14,
+        9,
+        1,
+        15
+      ],
+      "train_sequences": [
+        {
+          "development_failure_rate": 0.6666666666666667,
+          "development_successes": 1,
+          "development_trials": 3,
+          "hardness_factor": 1.6666666666666667,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 1.3333333333333333,
+          "pose_stratum": 0,
+          "pose_stratum_size": 6,
+          "raw_trajectory_id": 13,
+          "sampling_weight": 1.238390092879257,
+          "sequence_index": 13
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 10,
+          "raw_trajectory_id": 16,
+          "sampling_weight": 0.891640866873065,
+          "sequence_index": 16
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 10,
+          "raw_trajectory_id": 3,
+          "sampling_weight": 0.891640866873065,
+          "sequence_index": 3
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 10,
+          "raw_trajectory_id": 11,
+          "sampling_weight": 0.891640866873065,
+          "sequence_index": 11
+        },
+        {
+          "development_failure_rate": 0.33333333333333337,
+          "development_successes": 2,
+          "development_trials": 3,
+          "hardness_factor": 1.3333333333333335,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 10,
+          "raw_trajectory_id": 10,
+          "sampling_weight": 0.5944272445820434,
+          "sequence_index": 10
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 1.3333333333333333,
+          "pose_stratum": 0,
+          "pose_stratum_size": 6,
+          "raw_trajectory_id": 8,
+          "sampling_weight": 1.4860681114551082,
+          "sequence_index": 8
+        },
+        {
+          "development_failure_rate": 0.6666666666666667,
+          "development_successes": 1,
+          "development_trials": 3,
+          "hardness_factor": 1.6666666666666667,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 1.3333333333333333,
+          "pose_stratum": 0,
+          "pose_stratum_size": 6,
+          "raw_trajectory_id": 0,
+          "sampling_weight": 1.238390092879257,
+          "sequence_index": 0
+        },
+        {
+          "development_failure_rate": 0.33333333333333337,
+          "development_successes": 2,
+          "development_trials": 3,
+          "hardness_factor": 1.3333333333333335,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 10,
+          "raw_trajectory_id": 12,
+          "sampling_weight": 0.5944272445820434,
+          "sequence_index": 12
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 10,
+          "raw_trajectory_id": 7,
+          "sampling_weight": 0.891640866873065,
+          "sequence_index": 7
+        },
+        {
+          "development_failure_rate": 0.33333333333333337,
+          "development_successes": 2,
+          "development_trials": 3,
+          "hardness_factor": 1.3333333333333335,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 10,
+          "raw_trajectory_id": 5,
+          "sampling_weight": 0.5944272445820434,
+          "sequence_index": 5
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 10,
+          "raw_trajectory_id": 18,
+          "sampling_weight": 0.891640866873065,
+          "sequence_index": 18
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 1.3333333333333333,
+          "pose_stratum": 0,
+          "pose_stratum_size": 6,
+          "raw_trajectory_id": 17,
+          "sampling_weight": 1.4860681114551082,
+          "sequence_index": 17
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 1.3333333333333333,
+          "pose_stratum": 0,
+          "pose_stratum_size": 6,
+          "raw_trajectory_id": 14,
+          "sampling_weight": 1.4860681114551082,
+          "sequence_index": 14
+        },
+        {
+          "development_failure_rate": 0.33333333333333337,
+          "development_successes": 2,
+          "development_trials": 3,
+          "hardness_factor": 1.3333333333333335,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 10,
+          "raw_trajectory_id": 9,
+          "sampling_weight": 0.5944272445820434,
+          "sequence_index": 9
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 1.3333333333333333,
+          "pose_stratum": 0,
+          "pose_stratum_size": 6,
+          "raw_trajectory_id": 1,
+          "sampling_weight": 1.4860681114551082,
+          "sequence_index": 1
+        },
+        {
+          "development_failure_rate": 0.6666666666666667,
+          "development_successes": 1,
+          "development_trials": 3,
+          "hardness_factor": 1.6666666666666667,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 10,
+          "raw_trajectory_id": 15,
+          "sampling_weight": 0.7430340557275542,
+          "sequence_index": 15
+        }
+      ],
+      "valid_indices": [
+        4,
+        19,
+        6,
+        2
+      ]
+    },
+    "sem-CellPhone-4e2f684b3cebdbc344f470fdd42caac6": {
+      "object_name": "cellphone",
+      "pose_strata_count": 3,
+      "pose_stratum_sizes": {
+        "0": 1,
+        "1": 6,
+        "2": 3
+      },
+      "sequence_count": 13,
+      "split_hash": "3af790670782415e0a3d1fdfdd086991f45b825155f3a5932da3644a4bdef6b7",
+      "train_indices": [
+        4,
+        5,
+        12,
+        0,
+        3,
+        6,
+        9,
+        11,
+        8,
+        1
+      ],
+      "train_sequences": [
+        {
+          "development_failure_rate": 0.6666666666666667,
+          "development_successes": 1,
+          "development_trials": 3,
+          "hardness_factor": 1.6666666666666667,
+          "object_rotation_matrix": [
+            [
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "pose_balance_factor": 1.1111111111111112,
+          "pose_stratum": 2,
+          "pose_stratum_size": 3,
+          "raw_trajectory_id": 4,
+          "sampling_weight": 1.1864406779661016,
+          "sequence_index": 4
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "pose_balance_factor": 1.1111111111111112,
+          "pose_stratum": 2,
+          "pose_stratum_size": 3,
+          "raw_trajectory_id": 5,
+          "sampling_weight": 1.423728813559322,
+          "sequence_index": 5
+        },
+        {
+          "development_failure_rate": 0.6666666666666667,
+          "development_successes": 1,
+          "development_trials": 3,
+          "hardness_factor": 1.6666666666666667,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.5555555555555556,
+          "pose_stratum": 1,
+          "pose_stratum_size": 6,
+          "raw_trajectory_id": 19,
+          "sampling_weight": 0.5932203389830508,
+          "sequence_index": 12
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 3.3333333333333335,
+          "pose_stratum": 0,
+          "pose_stratum_size": 1,
+          "raw_trajectory_id": 0,
+          "sampling_weight": 3.0,
+          "sequence_index": 0
+        },
+        {
+          "development_failure_rate": 0.6666666666666667,
+          "development_successes": 1,
+          "development_trials": 3,
+          "hardness_factor": 1.6666666666666667,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.5555555555555556,
+          "pose_stratum": 1,
+          "pose_stratum_size": 6,
+          "raw_trajectory_id": 3,
+          "sampling_weight": 0.5932203389830508,
+          "sequence_index": 3
+        },
+        {
+          "development_failure_rate": 0.0,
+          "development_successes": 3,
+          "development_trials": 3,
+          "hardness_factor": 1.0,
+          "object_rotation_matrix": [
+            [
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "pose_balance_factor": 1.1111111111111112,
+          "pose_stratum": 2,
+          "pose_stratum_size": 3,
+          "raw_trajectory_id": 7,
+          "sampling_weight": 0.711864406779661,
+          "sequence_index": 6
+        },
+        {
+          "development_failure_rate": 0.6666666666666667,
+          "development_successes": 1,
+          "development_trials": 3,
+          "hardness_factor": 1.6666666666666667,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.5555555555555556,
+          "pose_stratum": 1,
+          "pose_stratum_size": 6,
+          "raw_trajectory_id": 15,
+          "sampling_weight": 0.5932203389830508,
+          "sequence_index": 9
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.5555555555555556,
+          "pose_stratum": 1,
+          "pose_stratum_size": 6,
+          "raw_trajectory_id": 18,
+          "sampling_weight": 0.711864406779661,
+          "sequence_index": 11
+        },
+        {
+          "development_failure_rate": 0.6666666666666667,
+          "development_successes": 1,
+          "development_trials": 3,
+          "hardness_factor": 1.6666666666666667,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.5555555555555556,
+          "pose_stratum": 1,
+          "pose_stratum_size": 6,
+          "raw_trajectory_id": 14,
+          "sampling_weight": 0.5932203389830508,
+          "sequence_index": 8
+        },
+        {
+          "development_failure_rate": 0.6666666666666667,
+          "development_successes": 1,
+          "development_trials": 3,
+          "hardness_factor": 1.6666666666666667,
+          "object_rotation_matrix": [
+            [
+              -1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.5555555555555556,
+          "pose_stratum": 1,
+          "pose_stratum_size": 6,
+          "raw_trajectory_id": 1,
+          "sampling_weight": 0.5932203389830508,
+          "sequence_index": 1
+        }
+      ],
+      "valid_indices": [
+        10,
+        2,
+        7
+      ]
+    },
+    "sem-USBStick-e2e75212fefa0ecf30e9a79a761377a4": {
+      "object_name": "usb_stick",
+      "pose_strata_count": 4,
+      "pose_stratum_sizes": {
+        "0": 4,
+        "1": 5,
+        "2": 5,
+        "3": 2
+      },
+      "sequence_count": 20,
+      "split_hash": "7eeb7be102fa442e7d2cedaea52073cb2d14f2610447a9528cf448933b0e785d",
+      "train_indices": [
+        13,
+        16,
+        3,
+        11,
+        10,
+        8,
+        0,
+        12,
+        7,
+        5,
+        18,
+        17,
+        14,
+        9,
+        1,
+        15
+      ],
+      "train_sequences": [
+        {
+          "development_failure_rate": 0.6666666666666667,
+          "development_successes": 1,
+          "development_trials": 3,
+          "hardness_factor": 1.6666666666666667,
+          "object_rotation_matrix": [
+            [
+              0.0,
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              -1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 1.0,
+          "pose_stratum": 0,
+          "pose_stratum_size": 4,
+          "raw_trajectory_id": 13,
+          "sampling_weight": 0.8791208791208792,
+          "sequence_index": 13
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -0.0,
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 5,
+          "raw_trajectory_id": 16,
+          "sampling_weight": 0.8439560439560441,
+          "sequence_index": 16
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -0.0,
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 5,
+          "raw_trajectory_id": 3,
+          "sampling_weight": 0.8439560439560441,
+          "sequence_index": 3
+        },
+        {
+          "development_failure_rate": 0.6666666666666667,
+          "development_successes": 1,
+          "development_trials": 3,
+          "hardness_factor": 1.6666666666666667,
+          "object_rotation_matrix": [
+            [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 2,
+          "pose_stratum_size": 5,
+          "raw_trajectory_id": 11,
+          "sampling_weight": 0.7032967032967034,
+          "sequence_index": 11
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -1.0,
+              -0.0
+            ],
+            [
+              0.0,
+              0.0,
+              -1.0
+            ]
+          ],
+          "pose_balance_factor": 2.0,
+          "pose_stratum": 3,
+          "pose_stratum_size": 2,
+          "raw_trajectory_id": 10,
+          "sampling_weight": 2.10989010989011,
+          "sequence_index": 10
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 2,
+          "pose_stratum_size": 5,
+          "raw_trajectory_id": 8,
+          "sampling_weight": 0.8439560439560441,
+          "sequence_index": 8
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              0.0,
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              -1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 1.0,
+          "pose_stratum": 0,
+          "pose_stratum_size": 4,
+          "raw_trajectory_id": 0,
+          "sampling_weight": 1.054945054945055,
+          "sequence_index": 0
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              0.0,
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              -1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 1.0,
+          "pose_stratum": 0,
+          "pose_stratum_size": 4,
+          "raw_trajectory_id": 12,
+          "sampling_weight": 1.054945054945055,
+          "sequence_index": 12
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -0.0,
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 5,
+          "raw_trajectory_id": 7,
+          "sampling_weight": 0.8439560439560441,
+          "sequence_index": 7
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -0.0,
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 5,
+          "raw_trajectory_id": 5,
+          "sampling_weight": 0.8439560439560441,
+          "sequence_index": 5
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              -1.0,
+              -0.0
+            ],
+            [
+              0.0,
+              0.0,
+              -1.0
+            ]
+          ],
+          "pose_balance_factor": 2.0,
+          "pose_stratum": 3,
+          "pose_stratum_size": 2,
+          "raw_trajectory_id": 18,
+          "sampling_weight": 2.10989010989011,
+          "sequence_index": 18
+        },
+        {
+          "development_failure_rate": 0.0,
+          "development_successes": 3,
+          "development_trials": 3,
+          "hardness_factor": 1.0,
+          "object_rotation_matrix": [
+            [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 2,
+          "pose_stratum_size": 5,
+          "raw_trajectory_id": 17,
+          "sampling_weight": 0.42197802197802203,
+          "sequence_index": 17
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 2,
+          "pose_stratum_size": 5,
+          "raw_trajectory_id": 14,
+          "sampling_weight": 0.8439560439560441,
+          "sequence_index": 14
+        },
+        {
+          "development_failure_rate": 0.6666666666666667,
+          "development_successes": 1,
+          "development_trials": 3,
+          "hardness_factor": 1.6666666666666667,
+          "object_rotation_matrix": [
+            [
+              0.0,
+              0.0,
+              -1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 2,
+          "pose_stratum_size": 5,
+          "raw_trajectory_id": 9,
+          "sampling_weight": 0.7032967032967034,
+          "sequence_index": 9
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              0.0,
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              -1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 1.0,
+          "pose_stratum": 0,
+          "pose_stratum_size": 4,
+          "raw_trajectory_id": 1,
+          "sampling_weight": 1.054945054945055,
+          "sequence_index": 1
+        },
+        {
+          "development_failure_rate": 1.0,
+          "development_successes": 0,
+          "development_trials": 3,
+          "hardness_factor": 2.0,
+          "object_rotation_matrix": [
+            [
+              -0.0,
+              0.0,
+              1.0
+            ],
+            [
+              0.0,
+              -1.0,
+              0.0
+            ],
+            [
+              1.0,
+              0.0,
+              0.0
+            ]
+          ],
+          "pose_balance_factor": 0.8,
+          "pose_stratum": 1,
+          "pose_stratum_size": 5,
+          "raw_trajectory_id": 15,
+          "sampling_weight": 0.8439560439560441,
+          "sequence_index": 15
+        }
+      ],
+      "valid_indices": [
+        4,
+        19,
+        6,
+        2
+      ]
+    }
+  },
+  "parameters": {
+    "hardness_strength": 1.0,
+    "max_sequence_weight": 3.0,
+    "pose_threshold_deg": 15.0,
+    "replacement": true,
+    "samples_per_epoch": "unchanged from uniform baseline",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "split_seed": 0,
+    "valid_fraction": 0.2
+  },
+  "protocol": "pose_stratified_hard_resampling_v1"
+}
