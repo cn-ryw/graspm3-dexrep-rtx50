@@ -1,0 +1,103 @@
+{
+  "cellphone": {
+    "object_code": "sem-CellPhone-4e2f684b3cebdbc344f470fdd42caac6",
+    "split_hash": "3af790670782415e0a3d1fdfdd086991f45b825155f3a5932da3644a4bdef6b7",
+    "split_seed": 0,
+    "split_summary": {
+      "sem-CellPhone-4e2f684b3cebdbc344f470fdd42caac6": {
+        "total_sequences": 13,
+        "train_indices": [
+          4,
+          5,
+          12,
+          0,
+          3,
+          6,
+          9,
+          11,
+          8,
+          1
+        ],
+        "train_sequences": 10,
+        "valid_indices": [
+          10,
+          2,
+          7
+        ],
+        "valid_sequences": 3
+      }
+    }
+  },
+  "jar": {
+    "object_code": "core-jar-8ec888ab36f1c5635afa616678601602",
+    "split_hash": "f67654f278a03c0d5b8db1dc6341b755f9e3f6c27e35129f6d8a19e45c8b1f63",
+    "split_seed": 0,
+    "split_summary": {
+      "core-jar-8ec888ab36f1c5635afa616678601602": {
+        "total_sequences": 20,
+        "train_indices": [
+          13,
+          16,
+          3,
+          11,
+          10,
+          8,
+          0,
+          12,
+          7,
+          5,
+          18,
+          17,
+          14,
+          9,
+          1,
+          15
+        ],
+        "train_sequences": 16,
+        "valid_indices": [
+          4,
+          19,
+          6,
+          2
+        ],
+        "valid_sequences": 4
+      }
+    }
+  },
+  "usb_stick": {
+    "object_code": "sem-USBStick-e2e75212fefa0ecf30e9a79a761377a4",
+    "split_hash": "7eeb7be102fa442e7d2cedaea52073cb2d14f2610447a9528cf448933b0e785d",
+    "split_seed": 0,
+    "split_summary": {
+      "sem-USBStick-e2e75212fefa0ecf30e9a79a761377a4": {
+        "total_sequences": 20,
+        "train_indices": [
+          13,
+          16,
+          3,
+          11,
+          10,
+          8,
+          0,
+          12,
+          7,
+          5,
+          18,
+          17,
+          14,
+          9,
+          1,
+          15
+        ],
+        "train_sequences": 16,
+        "valid_indices": [
+          4,
+          19,
+          6,
+          2
+        ],
+        "valid_sequences": 4
+      }
+    }
+  }
+}

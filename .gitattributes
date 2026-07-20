@@ -1,0 +1,3 @@
+patches/*.patch -whitespace
+experiment-final/figures/*.svg -whitespace
+experiment-final/results/*.csv -whitespace

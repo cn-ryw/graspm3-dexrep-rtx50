@@ -8,6 +8,7 @@ the original PyTorch 1.12 inference process.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
 import time
@@ -81,6 +82,8 @@ def load_sequence_split(
             "total_sequences": sequence_count,
             "train_sequences": len(train_indices),
             "valid_sequences": len(valid_indices),
+            "train_indices": train_indices.tolist(),
+            "valid_indices": valid_indices.tolist(),
         }
     return (
         torch.from_numpy(np.concatenate(train_observations)),
@@ -135,22 +138,26 @@ class DexRepBC(nn.Module):
         return self.actor(torch.cat([state_embedding, sensor_embedding, point_embedding], dim=1))
 
 
-def bc_loss(prediction: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+def bc_loss(
+    prediction: torch.Tensor, target: torch.Tensor, wrist_weight: float = 2.0,
+) -> torch.Tensor:
     wrist = functional.mse_loss(prediction[:, :3], target[:, :3])
     orientation = functional.mse_loss(prediction[:, 3:6], target[:, 3:6])
     finger = functional.mse_loss(prediction[:, 6:], target[:, 6:])
-    return 2 * wrist + orientation + finger + functional.l1_loss(prediction, target)
+    return wrist_weight * wrist + orientation + finger + functional.l1_loss(prediction, target)
 
 
 @torch.no_grad()
-def validate(model: nn.Module, loader: DataLoader, device: torch.device) -> float:
+def validate(
+    model: nn.Module, loader: DataLoader, device: torch.device, wrist_weight: float,
+) -> float:
     model.eval()
     total = 0.0
     count = 0
     for observations, actions in loader:
         observations = observations.to(device, non_blocking=True)
         actions = actions.to(device, non_blocking=True)
-        total += float(bc_loss(model(observations), actions)) * observations.shape[0]
+        total += float(bc_loss(model(observations), actions, wrist_weight)) * observations.shape[0]
         count += observations.shape[0]
     return total / count
 
@@ -161,6 +168,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--valid-dir", type=Path)
     parser.add_argument("--data-dir", type=Path)
     parser.add_argument("--valid-fraction", type=float, default=0.2)
+    parser.add_argument("--object-code")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--best-output", type=Path)
     parser.add_argument("--metrics-output", type=Path)
@@ -168,11 +176,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=256)
     parser.add_argument("--lr", type=float, default=2e-4)
     parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--split-seed", type=int, default=0)
+    parser.add_argument("--wrist-weight", type=float, default=2.0)
+    parser.add_argument("--milestone-epochs", default="1,5,10,25,50,100")
     parser.add_argument("--patience", type=int, default=0)
     return parser.parse_args()
 
 
-def make_checkpoint(model: nn.Module, epoch: int, global_step: int, device: torch.device) -> dict:
+def make_checkpoint(
+    model: nn.Module, epoch: int, global_step: int, device: torch.device,
+    experiment_metadata: dict | None = None,
+) -> dict:
     return {
         "state_dict": {f"model.{key}": value.detach().cpu() for key, value in model.state_dict().items()},
         "epoch": epoch,
@@ -182,6 +196,7 @@ def make_checkpoint(model: nn.Module, epoch: int, global_step: int, device: torc
             "cuda": torch.version.cuda,
             "device": torch.cuda.get_device_name(0) if device.type == "cuda" else "cpu",
         },
+        "experiment_metadata": experiment_metadata or {},
     }
 
 
@@ -197,10 +212,12 @@ def main() -> None:
     split_summary = None
     if args.data_dir is not None:
         data_paths = sorted(args.data_dir.glob("*.npy"))
+        if args.object_code:
+            data_paths = [path for path in data_paths if path.stem == args.object_code]
         if not data_paths:
             raise RuntimeError("The data directory must contain .npy files")
         train_obs, train_actions, valid_obs, valid_actions, split_summary = load_sequence_split(
-            data_paths, args.valid_fraction, args.seed,
+            data_paths, args.valid_fraction, args.split_seed,
         )
         train_paths = data_paths
         valid_paths = data_paths
@@ -224,6 +241,23 @@ def main() -> None:
 
     model = DexRepBC().to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    milestone_epochs = sorted({
+        int(item) for item in args.milestone_epochs.split(",") if item.strip()
+    })
+    if any(epoch < 1 or epoch > args.epochs for epoch in milestone_epochs):
+        raise ValueError("Milestone epochs must be within [1, --epochs]")
+    split_json = json.dumps(split_summary, sort_keys=True, separators=(",", ":"))
+    split_hash = hashlib.sha256(split_json.encode("utf-8")).hexdigest()
+    experiment_metadata = {
+        "object_code": args.object_code,
+        "seed": args.seed,
+        "split_seed": args.split_seed,
+        "split_hash": split_hash,
+        "wrist_weight": args.wrist_weight,
+        "valid_fraction": args.valid_fraction,
+        "batch_size": args.batch_size,
+        "learning_rate": args.lr,
+    }
     started = time.perf_counter()
     last_train_loss = float("nan")
     last_valid_loss = float("nan")
@@ -239,28 +273,48 @@ def main() -> None:
             observations = observations.to(device, non_blocking=True)
             actions = actions.to(device, non_blocking=True)
             optimizer.zero_grad(set_to_none=True)
-            loss = bc_loss(model(observations), actions)
+            loss = bc_loss(model(observations), actions, args.wrist_weight)
             loss.backward()
             optimizer.step()
             total += float(loss.detach()) * observations.shape[0]
             count += observations.shape[0]
         last_train_loss = total / count
-        last_valid_loss = validate(model, valid_loader, device)
+        last_valid_loss = validate(model, valid_loader, device, args.wrist_weight)
         history.append({"epoch": epoch + 1, "train_loss": last_train_loss, "val_loss": last_valid_loss})
         if last_valid_loss < best_valid_loss:
             best_valid_loss = last_valid_loss
             best_epoch = epoch
-            best_checkpoint = make_checkpoint(model, epoch, (epoch + 1) * len(train_loader), device)
+            best_checkpoint = make_checkpoint(
+                model, epoch, (epoch + 1) * len(train_loader), device, experiment_metadata,
+            )
         print(
             f"epoch={epoch + 1}/{args.epochs} train_loss={last_train_loss:.6f} "
             f"val_loss={last_valid_loss:.6f} best_val_loss={best_valid_loss:.6f}", flush=True,
         )
-        if args.patience > 0 and epoch - best_epoch >= args.patience:
+        if epoch + 1 in milestone_epochs:
+            milestone_path = args.output.parent / "milestones" / f"epoch_{epoch + 1:03d}.ckpt"
+            milestone_path.parent.mkdir(parents=True, exist_ok=True)
+            torch.save(
+                make_checkpoint(
+                    model, epoch, (epoch + 1) * len(train_loader), device, experiment_metadata,
+                ),
+                milestone_path,
+                _use_new_zipfile_serialization=False,
+            )
+        minimum_stop_epoch = max(milestone_epochs, default=1)
+        if (
+            args.patience > 0
+            and epoch + 1 >= minimum_stop_epoch
+            and epoch - best_epoch >= args.patience
+        ):
             print(f"early_stop epoch={epoch + 1} patience={args.patience}", flush=True)
             break
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    checkpoint = make_checkpoint(model, history[-1]["epoch"] - 1, len(history) * len(train_loader), device)
+    checkpoint = make_checkpoint(
+        model, history[-1]["epoch"] - 1, len(history) * len(train_loader), device,
+        experiment_metadata,
+    )
     torch.save(checkpoint, args.output, _use_new_zipfile_serialization=False)
     best_output = args.best_output or args.output.with_name("best.ckpt")
     torch.save(best_checkpoint, best_output, _use_new_zipfile_serialization=False)
@@ -285,6 +339,12 @@ def main() -> None:
         "checkpoint": str(args.output),
         "best_checkpoint": str(best_output),
         "split_summary": split_summary,
+        "split_hash": split_hash,
+        "object_code": args.object_code,
+        "seed": args.seed,
+        "split_seed": args.split_seed,
+        "wrist_weight": args.wrist_weight,
+        "milestone_epochs": milestone_epochs,
     }
     metrics_output.write_text(json.dumps({"result": result, "history": history}, indent=2, sort_keys=True))
     print("RESULT_JSON=" + json.dumps(result, sort_keys=True), flush=True)

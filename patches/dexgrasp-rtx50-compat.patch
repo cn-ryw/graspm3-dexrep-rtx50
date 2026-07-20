@@ -70,7 +70,7 @@ index 022494d..235f16d 100644
                  val = val.reshape(N * T, *val.shape[2:])  # (N*T, ...)
              if key != 'obj_code_idx' and self.is_pad and self.args.n_obs_steps > 1:
 diff --git a/dexgrasp/bc_env_infer.py b/dexgrasp/bc_env_infer.py
-index e814249..16e44ec 100644
+index e814249..2754c9b 100644
 --- a/dexgrasp/bc_env_infer.py
 +++ b/dexgrasp/bc_env_infer.py
 @@ -45,7 +45,11 @@ def create_bc_model(base_path):
@@ -86,7 +86,49 @@ index e814249..16e44ec 100644
      ckpt = torch.load(bc_args.policy.checkpoints, map_location=torch.device(args.rl_device))
      bc_model.load_state_dict(ckpt['state_dict'])
  
-@@ -87,16 +91,24 @@ def run(mode='seen'):
+@@ -54,7 +58,7 @@ def create_bc_model(base_path):
+ 
+     return bc_model, bc_model_name, bc_info_name
+ 
+-def run(mode='seen'):
++def run(mode='seen'):
+     base_path = '../'
+     if mode=='seen' or 'one':
+         obj_id_list =cfg['env']['seen_object_code_dict']
+@@ -65,7 +69,8 @@ def run(mode='seen'):
+     bc_info_name=bc_info_name+'_'+'test_num{}'.format(cfg['env']['test_num'])
+     cfg['env']['bc_model_name'] = bc_model_name
+ 
+-    results = {'total_succ_rates':[],'dataset_name':mode,'detail':[]}
++    results = {'total_succ_rates':[],'dataset_name':mode,'detail':[]}
++    rollout_results = []
+     print('bc info: {}'.format(bc_info_name))
+     batch_size = cfg['env']['infer_batch_size']
+     num_full_batches = len(obj_id_list) // batch_size
+@@ -76,27 +81,44 @@ def run(mode='seen'):
+         obj_glob_feat = None
+         task, env = create_env()
+ 
+-        succ_rate, result_desc = test_env(args, task, env, bc_model, bc_model_name, processed_batch[-1], obj_glob_feat)
+-        results['total_succ_rates'].append(succ_rate)
+-        results['detail'].append([result_desc])
++        succ_rate, result_desc, rollout_metrics = test_env(
++            args, task, env, bc_model, bc_model_name, processed_batch[-1], obj_glob_feat
++        )
++        results['total_succ_rates'].append(succ_rate)
++        results['detail'].append([result_desc])
++        rollout_results.append(rollout_metrics)
+         env.task.clean_sim()
+         del task,env
+         gc.collect()
+ 
+-    save_results_summary(results,filename=bc_info_name, to_yaml=True)
++    save_results_summary(results,filename=bc_info_name, to_yaml=True)
++    rollout_output = os.environ.get('DEXGRASP_ROLLOUT_OUTPUT')
++    if rollout_output:
++        os.makedirs(rollout_output, exist_ok=True)
++        with open(os.path.join(rollout_output, 'rollout_metrics.json'), 'w', encoding='utf-8') as stream:
++            json.dump({'runs': rollout_results}, stream, indent=2, sort_keys=True)
      print('---------------------finish {}--------------------------\n'.format(bc_info_name))
  
  
@@ -107,6 +149,7 @@ index e814249..16e44ec 100644
 +    args = get_args()
 +    cfg, cfg_train, logdir = load_cfg(args)
 +    agent_index = get_AgentIndex(cfg)
++    cfg_train['seed'] = int(os.environ.get('DEXGRASP_EVAL_SEED', args.seed))
 +
 +    runtime_objects = [
 +        item for item in os.environ.get('DEXGRASP_INFER_OBJECTS', '').split(',') if item
@@ -307,3 +350,249 @@ index f3d6f6e..f2bfd8e 100644
  import matplotlib.colors as mcolors
  class HandModel:
      def __init__(self, mjcf_path, mesh_path, contact_points_path, penetration_points_path, n_surface_points=0, device='cpu',use_joint21=False):
+diff --git a/dexgrasp/utils/test_env.py b/dexgrasp/utils/test_env.py
+index 0eadf00..9b07d6b 100644
+--- a/dexgrasp/utils/test_env.py
++++ b/dexgrasp/utils/test_env.py
+@@ -1,12 +1,15 @@
+-import torch
+-import statistics
+-import torch.nn.functional as F
+-from utils.torch_jit_utils import *
+-import numpy as np
++import torch
++import statistics
++import torch.nn.functional as F
++from utils.torch_jit_utils import *
++import numpy as np
++import json
++import os
++from pathlib import Path
+ 
+ 
+ # remove(56,84), (149-179), [84-149]->(5,13)->cut->(5,7)->(1,35), (216-222) : 222-28-30-30-6=94
+-def obs_process(observation,pro_dim=128):
++def obs_process(observation,pro_dim=128):
+     """
+     observation =(N,2582) or (n_obs_steps, N, 2582)
+     """
+@@ -33,7 +36,75 @@ def obs_process(observation,pro_dim=128):
+ 
+     mask = ~torch.isin(all_indices, final_indice_remove)
+     filter_observation = observation[...,mask]
+-    return filter_observation
++    return filter_observation
++
++
++def _sample_mesh_vertices(mesh, point_count):
++    vertices = np.asarray(mesh.vertices, dtype=np.float32)
++    if len(vertices) == 0:
++        return np.zeros((point_count, 3), dtype=np.float32)
++    indices = np.linspace(0, len(vertices) - 1, point_count, dtype=np.int64)
++    return vertices[indices]
++
++
++def _build_visualization_payload(task, hand_states, object_states, lift_m, success):
++    """Reconstruct official hand/object geometry for one success and one failure.
++
++    The compact point-cloud payload is stored beside the raw 28-D hand and 7-D
++    object states.  Rendering is intentionally performed offline so every case
++    shares the exact same camera, bounds, colours, and frame rate.
++    """
++    success_ids = np.flatnonzero(success)
++    failure_ids = np.flatnonzero(~success)
++    candidates = []
++    if len(success_ids):
++        candidates.append(('success', int(success_ids[np.argmax(lift_m[success_ids].max(axis=1))])))
++    if len(failure_ids):
++        candidates.append(('failure', int(failure_ids[np.argmax(lift_m[failure_ids].max(axis=1))])))
++
++    payload = {}
++    descriptions = []
++    frame_count = hand_states.shape[1]
++    for case_name, trajectory_id in candidates:
++        trajectory_lift = lift_m[trajectory_id]
++        lift_threshold = max(0.01, float(trajectory_lift.max()) * 0.80)
++        lift_candidates = np.flatnonzero(trajectory_lift >= lift_threshold)
++        lift_step = int(lift_candidates[0]) if len(lift_candidates) else int(np.argmax(trajectory_lift))
++        contact_threshold = max(0.003, float(trajectory_lift.max()) * 0.10)
++        contact_candidates = np.flatnonzero(trajectory_lift >= contact_threshold)
++        contact_step = int(contact_candidates[0]) if len(contact_candidates) else max(1, frame_count // 3)
++        key_steps = [0, contact_step, lift_step, frame_count - 1]
++        sampled_steps = np.unique(np.concatenate([
++            np.linspace(0, frame_count - 1, min(32, frame_count), dtype=np.int64),
++            np.asarray(key_steps, dtype=np.int64),
++        ]))
++
++        hand_tensor = torch.from_numpy(hand_states[trajectory_id:trajectory_id + 1, sampled_steps].copy())
++        hand_tensor[..., 2] += task.init_hand_pos_z
++        object_tensor = torch.from_numpy(object_states[:, sampled_steps].copy())
++        hand_meshes = task.get_seq_hand_mesh(hand_tensor)[0]
++        object_meshes = task.get_seq_object_mesh(object_tensor, select_idxs=[trajectory_id])[0]
++        hand_points = np.stack([_sample_mesh_vertices(mesh, 3500) for mesh in hand_meshes])
++        object_points = np.stack([_sample_mesh_vertices(mesh, 1500) for mesh in object_meshes])
++
++        prefix = 'visual_{}'.format(case_name)
++        payload[prefix + '_trajectory_id'] = np.asarray(trajectory_id, dtype=np.int64)
++        payload[prefix + '_frame_steps'] = sampled_steps.astype(np.int64)
++        payload[prefix + '_key_steps'] = np.asarray(key_steps, dtype=np.int64)
++        payload[prefix + '_hand_points'] = hand_points.astype(np.float32)
++        payload[prefix + '_object_points'] = object_points.astype(np.float32)
++        descriptions.append({
++            'case': case_name,
++            'trajectory_id': trajectory_id,
++            'frame_steps': sampled_steps.tolist(),
++            'key_steps': {
++                'start': key_steps[0],
++                'contact': key_steps[1],
++                'lift': key_steps[2],
++                'end': key_steps[3],
++            },
++        })
++    return payload, descriptions
+ 
+ @torch.no_grad()
+ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_gt=False, use_part_gt=False):
+@@ -49,9 +120,13 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+     cur_success = torch.zeros(task.num_envs, dtype=torch.float, device=args.rl_device)
+     cur_success_done_sum = torch.zeros(task.num_envs, dtype=torch.float, device=args.rl_device)
+ 
+-    task.reset_buf = torch.ones(task.num_envs, device=task.device, dtype=torch.long)
++    task.reset_buf = torch.ones(task.num_envs, device=task.device, dtype=torch.long)
+     task.progress_buf = torch.zeros(task.num_envs, device=task.device, dtype=torch.long)
+-    current_obs_state = env.reset()
++    current_obs_state = env.reset()
++    initial_object_state = task.get_object_state().detach().cpu()
++    object_state_history = [initial_object_state]
++    hand_state_history = [task.get_hand_state(add_init_bias=False).detach().cpu()]
++    success_step = np.full(task.num_envs, -1, dtype=np.int64)
+     # current_obs_state= traj_obs[:,0]
+     if current_obs_state.shape[-1]==2582:
+         current_obs_state = obs_process(current_obs_state,pro_dim=pro_dim) #2582->2488 if LitDP3Model: (2,N, 2488); LitBCModel: (N, 2488)
+@@ -76,7 +151,8 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+             a=1
+ 
+     pred_actions = []
+-    sim_actions = []
++    sim_actions = []
++    last_printed_success = -1
+ 
+ 
+     while len(reward_sum) < maxlen:
+@@ -91,7 +167,7 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+             actions_dict = model.model.predict_action(input_dict) #obs: (N,2, 2488) actions: (N,3, 28)
+             actions = actions_dict['natcion'].squeeze(0).transpose(0,1) #actions: (3,N, 28)naction_pred
+ 
+-        elif model.__class__.__name__ == 'LitBCModel':
++        elif model.__class__.__name__ == 'LitBCModel':
+             actions = model.model.act_inference(current_obs_state)
+             a=1
+         actions = actions.clamp(-1,1)
+@@ -120,8 +196,10 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+         elif model.__class__.__name__ == 'LitBCModel':
+             if i>30 and env.task.cfg['env']['use_pre_fixed_actions']: #40
+                 actions = env.task.get_pre_target_actions(actions,i)
+-            env.task.step(actions, i+1)
+-            next_obs = env.task.obs_buf.clone()# (B,2580)
++            env.task.step(actions, i+1)
++            next_obs = env.task.obs_buf.clone()# (B,2580)
++        object_state_history.append(task.get_object_state().detach().cpu())
++        hand_state_history.append(task.get_hand_state(add_init_bias=False).detach().cpu())
+             # next_obs = traj_obs[:, i]
+ 
+         # next_obs_gt = obs_process(traj_obs[:,i+1],pro_dim=pro_dim)
+@@ -158,14 +236,20 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+         new_ids = (dones > 0).nonzero(as_tuple=False)
+         success_ = torch.where(task.successes==1)[0]*1 #(B, )
+ 
+-        cur_success[:] = task.successes #torch.where(task.successes==1)[0]*1
++        cur_success[:] = task.successes #torch.where(task.successes==1)[0]*1
++        success_now = task.successes.detach().cpu().numpy() > 0
++        newly_successful = (success_step < 0) & success_now
++        success_step[newly_successful] = i + 1
+         cur_success_done_sum[new_ids] = cur_success[new_ids]
+-        if task.successes.sum()>0:
+-            print('name={}, iter={}, N_seq={}, success_num:{}'.format(obj_id, i ,task.num_envs, task.successes.sum()))
+-            a=1
+-        else:
+-            print('name={}, iter={}, N_seq={}, None'.format(obj_id, i ,task.num_envs))
+-            a=1
++        success_count_now = int(task.successes.sum().item())
++        if success_count_now != last_printed_success or i % 20 == 0 or i >= 120:
++            if success_count_now > 0:
++                print('name={}, iter={}, N_seq={}, success_num:{}'.format(
++                    obj_id, i, task.num_envs, success_count_now
++                ))
++            else:
++                print('name={}, iter={}, N_seq={}, None'.format(obj_id, i, task.num_envs))
++            last_printed_success = success_count_now
+         reward_sum.extend(cur_reward_sum[new_ids][:, 0].cpu().numpy().tolist())
+         episode_length.extend(cur_episode_length[new_ids][:, 0].cpu().numpy().tolist())
+         # successes.extend(infos['successes'][new_ids.cpu()][:, 0].cpu().numpy().tolist())
+@@ -203,6 +287,65 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+     #     np.save('./results/{}.npy'.format(obj_id), data_dict, allow_pickle=True)
+ 
+ 
+-    return succ_rate, result_desc
++    object_states = torch.stack(object_state_history, dim=1).numpy()
++    hand_states = torch.stack(hand_state_history, dim=1).numpy()
++    lift_m = object_states[:, :, 2] - object_states[:, 0:1, 2]
++    max_lift_m = lift_m.max(axis=1)
++    final_lift_m = lift_m[:, -1]
++    success = success_step >= 0
++    trajectory_metrics = []
++    for trajectory_id in range(task.num_envs):
++        trajectory_metrics.append({
++            'trajectory_id': int(trajectory_id),
++            'success': bool(success[trajectory_id]),
++            'success_step': int(success_step[trajectory_id]),
++            'max_lift_m': float(max_lift_m[trajectory_id]),
++            'final_lift_m': float(final_lift_m[trajectory_id]),
++            'normalized_lift_score': float(np.clip(max_lift_m[trajectory_id] / 0.30, 0.0, 1.0)),
++        })
++
++    rollout_metrics = {
++        'object_code': obj_id,
++        'method': os.environ.get('DEXGRASP_METHOD', 'unspecified'),
++        'seed': int(os.environ.get('DEXGRASP_EVAL_SEED', '0')),
++        'epoch': os.environ.get('DEXGRASP_EPOCH', 'best'),
++        'num_trajectories': int(task.num_envs),
++        'success_count': int(success.sum()),
++        'success_rate': float(success.mean()),
++        'mean_max_lift_m': float(max_lift_m.mean()),
++        'mean_final_lift_m': float(final_lift_m.mean()),
++        'mean_normalized_lift_score': float(np.clip(max_lift_m / 0.30, 0.0, 1.0).mean()),
++        'metric_definitions': {
++            'max_lift_m': 'maximum object z displacement relative to rollout step 0',
++            'final_lift_m': 'final object z displacement relative to rollout step 0',
++            'normalized_lift_score': 'clip(max_lift_m / 0.30, 0, 1)',
++            'normalized_lift_name': 'checkpoint evaluation normalized lift score',
++            'not_training_reward': True,
++        },
++        'trajectories': trajectory_metrics,
++    }
++    output_dir = os.environ.get('DEXGRASP_ROLLOUT_OUTPUT')
++    if output_dir:
++        output_path = Path(output_dir)
++        output_path.mkdir(parents=True, exist_ok=True)
++        state_path = output_path / ('{}_rollout_states.npz'.format(obj_id))
++        visual_payload = {}
++        if os.environ.get('DEXGRASP_EXPORT_VISUALS', '0') == '1':
++            visual_payload, descriptions = _build_visualization_payload(
++                task, hand_states, object_states, lift_m, success,
++            )
++            rollout_metrics['render_candidates'] = descriptions
++        np.savez_compressed(
++            str(state_path),
++            object_states=object_states.astype(np.float32),
++            hand_states=hand_states.astype(np.float32),
++            lift_m=lift_m.astype(np.float32),
++            success=success.astype(np.uint8),
++            success_step=success_step,
++            **visual_payload,
++        )
++        rollout_metrics['state_file'] = state_path.name
++
++    return succ_rate, result_desc, rollout_metrics
+     # return  obj_id, task.num_envs, task.successes.mean().cpu().numpy().item(),task.successes.sum().cpu().numpy().item()
+ 

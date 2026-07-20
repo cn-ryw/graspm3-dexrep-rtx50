@@ -1,0 +1,47 @@
+{
+  "case": "failure",
+  "epoch": "best",
+  "method": "wrist4",
+  "object_code": "core-jar-8ec888ab36f1c5635afa616678601602",
+  "render": {
+    "bounds_m": {
+      "x": [
+        -0.28,
+        0.28
+      ],
+      "y": [
+        -0.28,
+        0.28
+      ],
+      "z": [
+        0.42,
+        1.18
+      ]
+    },
+    "camera": {
+      "azimuth_deg": -58,
+      "elevation_deg": 24
+    },
+    "colors": {
+      "hand": "#d95f9f",
+      "object": "#4c78a8"
+    },
+    "fps": 10,
+    "key_steps": {
+      "contact": 28,
+      "end": 122,
+      "lift": 35,
+      "start": 0
+    }
+  },
+  "seed": 2,
+  "source_state_file": "core-jar-8ec888ab36f1c5635afa616678601602_rollout_states.npz",
+  "trajectory": {
+    "final_lift_m": -3.516674041748047e-06,
+    "max_lift_m": 0.014957249164581299,
+    "normalized_lift_score": 0.049857497215270996,
+    "success": false,
+    "success_step": -1,
+    "trajectory_id": 8
+  }
+}
