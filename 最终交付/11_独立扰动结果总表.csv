@@ -1,0 +1,5 @@
+object,trajectories,seed_0_successes,seed_0_success_rate,seed_1_successes,seed_1_success_rate,seed_2_successes,seed_2_success_rate,member_successes,member_trials,member_mean_success_rate,ensemble_successes,ensemble_success_rate,ensemble_minus_member_mean_pp
+jar,20,4,0.2,3,0.15,7,0.35,14,60,0.23333333333333334,5,0.25,1.6666666666666663
+cellphone,20,3,0.15,3,0.15,4,0.2,10,60,0.16666666666666666,5,0.25,8.333333333333334
+usb_stick,20,3,0.15,1,0.05,4,0.2,8,60,0.13333333333333333,2,0.1,-3.3333333333333326
+aggregate,60,10,0.16666666666666666,7,0.11666666666666667,15,0.25,32,180,0.17777777777777778,12,0.2,2.2222222222222228
