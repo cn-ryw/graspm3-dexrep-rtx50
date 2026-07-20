@@ -1,0 +1,61 @@
+{
+  "status": "exploratory_post_hoc_deployment_optimization",
+  "protocol_note": "The same fixed 20 trajectories were reused and the object-specific method was selected after inspecting the fair experiment. This is not an independent fair-test claim.",
+  "routing": {
+    "jar": "wrist4",
+    "cellphone": "wrist4",
+    "usb_stick": "baseline"
+  },
+  "ensemble": "mean of unclamped deterministic 28-D actions from seed 0/1/2 best checkpoints",
+  "objects": [
+    {
+      "object": "jar",
+      "display_name": "Jar",
+      "selected_method": "wrist4",
+      "ensemble_size": 3,
+      "successes": 7,
+      "trajectories": 20,
+      "success_rate": 0.35,
+      "checkpoint_evaluation_normalized_lift_score": 0.358338862657547,
+      "policy_inference_mean_ms": 2.462418983638793,
+      "policy_inference_p95_ms": 3.048385500187578
+    },
+    {
+      "object": "cellphone",
+      "display_name": "Cellphone",
+      "selected_method": "wrist4",
+      "ensemble_size": 3,
+      "successes": 6,
+      "trajectories": 20,
+      "success_rate": 0.3,
+      "checkpoint_evaluation_normalized_lift_score": 0.33718371391296387,
+      "policy_inference_mean_ms": 2.4575846803480865,
+      "policy_inference_p95_ms": 2.9130085496035463
+    },
+    {
+      "object": "usb_stick",
+      "display_name": "USB stick",
+      "selected_method": "baseline",
+      "ensemble_size": 3,
+      "successes": 3,
+      "trajectories": 20,
+      "success_rate": 0.15,
+      "checkpoint_evaluation_normalized_lift_score": 0.15059413015842438,
+      "policy_inference_mean_ms": 2.455236065558341,
+      "policy_inference_p95_ms": 2.9906694496276027
+    }
+  ],
+  "aggregate": {
+    "successes": 16,
+    "trajectories": 60,
+    "success_rate": 0.26666666666666666,
+    "checkpoint_evaluation_normalized_lift_score": 0.2820389022429784
+  },
+  "latency": {
+    "single_policy_reference_mean_ms": 0.9085935082231251,
+    "three_policy_ensemble_mean_ms": 2.4584132431817403,
+    "slowdown_ratio": 2.7057349859229047,
+    "sixty_hz_budget_ms": 16.666666666666668
+  },
+  "decision": "Keep the ensemble as an optional stability-oriented deployment route; do not replace the fair baseline/wrist4 conclusion until an independent perturbation holdout is evaluated."
+}
