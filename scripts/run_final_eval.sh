@@ -2,10 +2,11 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --checkpoint FILE --object-code CODE --method NAME --seed N --epoch LABEL --output-dir DIR [--export-visuals]" >&2
+  echo "Usage: $0 (--checkpoint FILE | --checkpoints FILE,FILE,...) --object-code CODE --method NAME --seed N --epoch LABEL --output-dir DIR [--export-visuals]" >&2
 }
 
 checkpoint=""
+checkpoints=""
 object_code=""
 method=""
 seed=""
@@ -15,6 +16,7 @@ export_visuals=0
 while (($#)); do
   case "$1" in
     --checkpoint) checkpoint="$2"; shift 2 ;;
+    --checkpoints) checkpoints="$2"; shift 2 ;;
     --object-code) object_code="$2"; shift 2 ;;
     --method) method="$2"; shift 2 ;;
     --seed) seed="$2"; shift 2 ;;
@@ -25,13 +27,16 @@ while (($#)); do
   esac
 done
 
-if [[ -z "${checkpoint}" || -z "${object_code}" || -z "${method}" || -z "${seed}" || -z "${epoch}" || -z "${output_dir}" ]]; then
+if [[ -z "${object_code}" || -z "${method}" || -z "${seed}" || -z "${epoch}" || -z "${output_dir}" ]]; then
   usage
   exit 2
 fi
-if [[ ! -f "${checkpoint}" ]]; then
-  echo "Checkpoint not found: ${checkpoint}" >&2
+if [[ -n "${checkpoint}" && -n "${checkpoints}" ]] || [[ -z "${checkpoint}" && -z "${checkpoints}" ]]; then
+  usage
   exit 2
+fi
+if [[ -n "${checkpoint}" ]]; then
+  checkpoints="${checkpoint}"
 fi
 
 control_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -48,7 +53,21 @@ for required_dir in "${repo_dir}" "${isaacgym_dir}" "${graspm3_dir}/dataset" "${
   fi
 done
 
-checkpoint="$(realpath "${checkpoint}")"
+IFS=',' read -r -a checkpoint_files <<< "${checkpoints}"
+checkpoint_mounts=()
+runtime_checkpoints=()
+for index in "${!checkpoint_files[@]}"; do
+  checkpoint_file="${checkpoint_files[${index}]}"
+  if [[ ! -f "${checkpoint_file}" ]]; then
+    echo "Checkpoint not found: ${checkpoint_file}" >&2
+    exit 2
+  fi
+  checkpoint_file="$(realpath "${checkpoint_file}")"
+  container_checkpoint="/workspace/checkpoints/member_${index}.ckpt"
+  checkpoint_mounts+=(--mount "type=bind,src=${checkpoint_file},dst=${container_checkpoint},readonly")
+  runtime_checkpoints+=("${container_checkpoint}")
+done
+runtime_checkpoint_csv="$(IFS=,; echo "${runtime_checkpoints[*]}")"
 mkdir -p "${extension_cache}" "${output_dir}"
 output_dir="$(realpath "${output_dir}")"
 
@@ -59,7 +78,7 @@ docker run --rm --gpus all --network none --ipc host \
   --env TORCH_EXTENSIONS_DIR=/opt/torch_extensions \
   --env DEXGRASP_INFER_OBJECTS="${object_code}" \
   --env DEXGRASP_INFER_BATCH_SIZE=1 \
-  --env DEXGRASP_CHECKPOINT=/workspace/checkpoint.ckpt \
+  --env DEXGRASP_CHECKPOINTS="${runtime_checkpoint_csv}" \
   --env DEXGRASP_ROLLOUT_OUTPUT=/output \
   --env DEXGRASP_METHOD="${method}" \
   --env DEXGRASP_EVAL_SEED="${seed}" \
@@ -71,7 +90,7 @@ docker run --rm --gpus all --network none --ipc host \
   --mount "type=bind,src=${graspm3_dir}/dataset,dst=/workspace/project/dexgrasp/dataset/train,readonly" \
   --mount "type=bind,src=${graspm3_dir}/meshdata,dst=/workspace/project/assets/meshdata,readonly" \
   --mount "type=bind,src=${extension_cache},dst=/opt/torch_extensions" \
-  --mount "type=bind,src=${checkpoint},dst=/workspace/checkpoint.ckpt,readonly" \
+  "${checkpoint_mounts[@]}" \
   --mount "type=bind,src=${output_dir},dst=/output" \
   --workdir /workspace/project/dexgrasp \
   "${image_name}" \
