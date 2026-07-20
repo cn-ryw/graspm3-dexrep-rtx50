@@ -2,7 +2,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 (--checkpoint FILE | --checkpoints FILE,FILE,...) --object-code CODE --method NAME --seed N --epoch LABEL --output-dir DIR [--export-visuals]" >&2
+  echo "Usage: $0 (--checkpoint FILE | --checkpoints FILE,FILE,...) --object-code CODE --method NAME --seed N --epoch LABEL --output-dir DIR [--holdout-manifest FILE] [--export-visuals]" >&2
 }
 
 checkpoint=""
@@ -12,6 +12,7 @@ method=""
 seed=""
 epoch=""
 output_dir=""
+holdout_manifest=""
 export_visuals=0
 while (($#)); do
   case "$1" in
@@ -22,6 +23,7 @@ while (($#)); do
     --seed) seed="$2"; shift 2 ;;
     --epoch) epoch="$2"; shift 2 ;;
     --output-dir) output_dir="$2"; shift 2 ;;
+    --holdout-manifest) holdout_manifest="$2"; shift 2 ;;
     --export-visuals) export_visuals=1; shift ;;
     *) usage; exit 2 ;;
   esac
@@ -71,6 +73,19 @@ runtime_checkpoint_csv="$(IFS=,; echo "${runtime_checkpoints[*]}")"
 mkdir -p "${extension_cache}" "${output_dir}"
 output_dir="$(realpath "${output_dir}")"
 
+holdout_args=()
+if [[ -n "${holdout_manifest}" ]]; then
+  if [[ ! -f "${holdout_manifest}" ]]; then
+    echo "Holdout manifest not found: ${holdout_manifest}" >&2
+    exit 2
+  fi
+  holdout_manifest="$(realpath "${holdout_manifest}")"
+  holdout_args+=(
+    --env DEXGRASP_HOLDOUT_MANIFEST=/workspace/holdout/manifest.json
+    --mount "type=bind,src=${holdout_manifest},dst=/workspace/holdout/manifest.json,readonly"
+  )
+fi
+
 docker run --rm --gpus all --network none --ipc host \
   --env NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics \
   --env PYTHONDONTWRITEBYTECODE=1 \
@@ -84,6 +99,7 @@ docker run --rm --gpus all --network none --ipc host \
   --env DEXGRASP_EVAL_SEED="${seed}" \
   --env DEXGRASP_EPOCH="${epoch}" \
   --env DEXGRASP_EXPORT_VISUALS="${export_visuals}" \
+  "${holdout_args[@]}" \
   --mount "type=bind,src=${isaacgym_dir},dst=/opt/isaacgym,readonly" \
   --mount "type=bind,src=${repo_dir},dst=/workspace/project" \
   --mount "type=bind,src=${control_dir}/scripts,dst=/scripts,readonly" \

@@ -1,0 +1,55 @@
+{
+  "case": "success",
+  "epoch": "ensemble_best",
+  "method": "holdout_adaptive_ensemble_wrist4",
+  "object_code": "sem-CellPhone-4e2f684b3cebdbc344f470fdd42caac6",
+  "render": {
+    "bounds_m": {
+      "x": [
+        -0.28,
+        0.28
+      ],
+      "y": [
+        -0.28,
+        0.28
+      ],
+      "z": [
+        0.42,
+        1.18
+      ]
+    },
+    "camera": {
+      "azimuth_deg": -58,
+      "elevation_deg": 24
+    },
+    "colors": {
+      "hand": "#d95f9f",
+      "object": "#4c78a8"
+    },
+    "fps": 12,
+    "key_steps": {
+      "contact": 33,
+      "end": 122,
+      "lift": 64,
+      "start": 0
+    }
+  },
+  "seed": 0,
+  "source_state_file": "sem-CellPhone-4e2f684b3cebdbc344f470fdd42caac6_rollout_states.npz",
+  "trajectory": {
+    "final_lift_m": 0.5831082463264465,
+    "holdout_perturbation": {
+      "friction": 1.010025093,
+      "mass_kg": 0.213567805,
+      "position_x_m": 0.002533363,
+      "position_y_m": 0.001710294,
+      "trajectory_id": 0,
+      "yaw_deg": -0.513118202
+    },
+    "max_lift_m": 0.5831082463264465,
+    "normalized_lift_score": 1.0,
+    "success": true,
+    "success_step": 41,
+    "trajectory_id": 0
+  }
+}

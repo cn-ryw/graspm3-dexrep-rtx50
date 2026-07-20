@@ -1,0 +1,120 @@
+{
+  "status": "frozen_independent_perturbation_holdout",
+  "holdout_manifest_sha256": "8cec9bee7170c47782b8d6e19662f5698840b9958ed06449350c89fc788c020d",
+  "protocol": "frozen_combined_pose_friction_mass_holdout_v1",
+  "comparison": "Frozen object routing and seed-0/1/2 action-mean ensemble versus all three constituent members on identical paired perturbations.",
+  "summaries": [
+    {
+      "object": "jar",
+      "trajectories": 20,
+      "seed_0_successes": 4,
+      "seed_0_success_rate": 0.2,
+      "seed_1_successes": 3,
+      "seed_1_success_rate": 0.15,
+      "seed_2_successes": 7,
+      "seed_2_success_rate": 0.35,
+      "member_successes": 14,
+      "member_trials": 60,
+      "member_mean_success_rate": 0.23333333333333334,
+      "ensemble_successes": 5,
+      "ensemble_success_rate": 0.25,
+      "ensemble_minus_member_mean_pp": 1.6666666666666663
+    },
+    {
+      "object": "cellphone",
+      "trajectories": 20,
+      "seed_0_successes": 3,
+      "seed_0_success_rate": 0.15,
+      "seed_1_successes": 3,
+      "seed_1_success_rate": 0.15,
+      "seed_2_successes": 4,
+      "seed_2_success_rate": 0.2,
+      "member_successes": 10,
+      "member_trials": 60,
+      "member_mean_success_rate": 0.16666666666666666,
+      "ensemble_successes": 5,
+      "ensemble_success_rate": 0.25,
+      "ensemble_minus_member_mean_pp": 8.333333333333334
+    },
+    {
+      "object": "usb_stick",
+      "trajectories": 20,
+      "seed_0_successes": 3,
+      "seed_0_success_rate": 0.15,
+      "seed_1_successes": 1,
+      "seed_1_success_rate": 0.05,
+      "seed_2_successes": 4,
+      "seed_2_success_rate": 0.2,
+      "member_successes": 8,
+      "member_trials": 60,
+      "member_mean_success_rate": 0.13333333333333333,
+      "ensemble_successes": 2,
+      "ensemble_success_rate": 0.1,
+      "ensemble_minus_member_mean_pp": -3.3333333333333326
+    },
+    {
+      "object": "aggregate",
+      "trajectories": 60,
+      "seed_0_successes": 10,
+      "seed_0_success_rate": 0.16666666666666666,
+      "seed_1_successes": 7,
+      "seed_1_success_rate": 0.11666666666666667,
+      "seed_2_successes": 15,
+      "seed_2_success_rate": 0.25,
+      "member_successes": 32,
+      "member_trials": 180,
+      "member_mean_success_rate": 0.17777777777777778,
+      "ensemble_successes": 12,
+      "ensemble_success_rate": 0.2,
+      "ensemble_minus_member_mean_pp": 2.2222222222222228
+    }
+  ],
+  "paired_analysis": {
+    "success_rate_difference_pp": 2.222222222222223,
+    "success_rate_difference_95pct_cluster_bootstrap_pp": [
+      -3.3333333333333335,
+      8.333333333333336
+    ],
+    "normalized_lift_difference": 0.006108397686922991,
+    "normalized_lift_difference_95pct_cluster_bootstrap": [
+      -0.047416090705880404,
+      0.06431663844872368
+    ],
+    "ensemble_unique_successes_no_member_succeeded": 0,
+    "ensemble_failures_at_least_one_member_succeeded": 9,
+    "per_member_paired": {
+      "seed_0": {
+        "ensemble_wins": 4,
+        "ensemble_losses": 2,
+        "ties": 54
+      },
+      "seed_1": {
+        "ensemble_wins": 5,
+        "ensemble_losses": 0,
+        "ties": 55
+      },
+      "seed_2": {
+        "ensemble_wins": 4,
+        "ensemble_losses": 7,
+        "ties": 49
+      }
+    }
+  },
+  "decision": "The ensemble improves the average and worst-seed deployment result but does not beat the best member; the bootstrap interval includes zero, so retain it as a stability option rather than claiming a statistically established success-rate improvement.",
+  "aggregate": {
+    "object": "aggregate",
+    "trajectories": 60,
+    "seed_0_successes": 10,
+    "seed_0_success_rate": 0.16666666666666666,
+    "seed_1_successes": 7,
+    "seed_1_success_rate": 0.11666666666666667,
+    "seed_2_successes": 15,
+    "seed_2_success_rate": 0.25,
+    "member_successes": 32,
+    "member_trials": 180,
+    "member_mean_success_rate": 0.17777777777777778,
+    "ensemble_successes": 12,
+    "ensemble_success_rate": 0.2,
+    "ensemble_minus_member_mean_pp": 2.2222222222222228
+  }
+}

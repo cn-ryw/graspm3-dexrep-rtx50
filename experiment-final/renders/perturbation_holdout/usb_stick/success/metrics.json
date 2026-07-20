@@ -1,0 +1,55 @@
+{
+  "case": "success",
+  "epoch": "ensemble_best",
+  "method": "holdout_adaptive_ensemble_baseline",
+  "object_code": "sem-USBStick-e2e75212fefa0ecf30e9a79a761377a4",
+  "render": {
+    "bounds_m": {
+      "x": [
+        -0.28,
+        0.28
+      ],
+      "y": [
+        -0.28,
+        0.28
+      ],
+      "z": [
+        0.42,
+        1.18
+      ]
+    },
+    "camera": {
+      "azimuth_deg": -58,
+      "elevation_deg": 24
+    },
+    "colors": {
+      "hand": "#d95f9f",
+      "object": "#4c78a8"
+    },
+    "fps": 12,
+    "key_steps": {
+      "contact": 41,
+      "end": 122,
+      "lift": 85,
+      "start": 0
+    }
+  },
+  "seed": 0,
+  "source_state_file": "sem-USBStick-e2e75212fefa0ecf30e9a79a761377a4_rollout_states.npz",
+  "trajectory": {
+    "final_lift_m": 0.5925455689430237,
+    "holdout_perturbation": {
+      "friction": 1.107180114,
+      "mass_kg": 0.210580513,
+      "position_x_m": 0.006078875,
+      "position_y_m": 0.000469342,
+      "trajectory_id": 9,
+      "yaw_deg": -5.155107033
+    },
+    "max_lift_m": 0.5925455689430237,
+    "normalized_lift_score": 1.0,
+    "success": true,
+    "success_step": 48,
+    "trajectory_id": 9
+  }
+}
