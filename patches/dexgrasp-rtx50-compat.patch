@@ -249,10 +249,19 @@ index 4d54bff..797b75b 100644
      args.headless = True
  
 diff --git a/dexgrasp/tasks/shadow_hand_grasp_dexrep_ijrr.py b/dexgrasp/tasks/shadow_hand_grasp_dexrep_ijrr.py
-index ee32ff6..39d44b9 100644
+index ee32ff6..2b35dd9 100644
 --- a/dexgrasp/tasks/shadow_hand_grasp_dexrep_ijrr.py
 +++ b/dexgrasp/tasks/shadow_hand_grasp_dexrep_ijrr.py
-@@ -162,11 +162,14 @@ class ShadowHandGraspDexRepIjrr(BaseTask):
+@@ -6,6 +6,8 @@
+ # license agreement from NVIDIA CORPORATION is strictly prohibited.
+ import os
+ import os.path as osp
++import hashlib
++import json
+ import numpy as np
+ import torch
+ import trimesh
+@@ -162,11 +164,14 @@ class ShadowHandGraspDexRepIjrr(BaseTask):
              self.obj_trajs_info = self.rl_data_load(trajs_path)
  
          else:
@@ -272,6 +281,83 @@ index ee32ff6..39d44b9 100644
              self.batch_load_data_dict(npy_list)
  
          self.obj_trajs_info['grasp_seqs'] = unwrap_euler_batch_vectorized( self.obj_trajs_info['grasp_seqs'])
+@@ -352,6 +357,28 @@ class ShadowHandGraspDexRepIjrr(BaseTask):
+ 
+         object_code_list = self.cfg['env']['object_code_dict']
+         self.object_code_list = object_code_list
++        holdout_manifest_path = os.environ.get('DEXGRASP_HOLDOUT_MANIFEST')
++        self.holdout_manifest_sha256 = None
++        self.holdout_protocol = None
++        self.holdout_perturbations = None
++        if holdout_manifest_path:
++            with open(holdout_manifest_path, 'rb') as stream:
++                manifest_bytes = stream.read()
++            holdout_manifest = json.loads(manifest_bytes.decode('utf-8'))
++            perturbations = holdout_manifest.get('trajectories', [])
++            if len(perturbations) != self.num_envs:
++                raise ValueError(
++                    'Holdout manifest has {} trajectories, expected {}'.format(
++                        len(perturbations), self.num_envs
++                    )
++                )
++            trajectory_ids = [int(item['trajectory_id']) for item in perturbations]
++            if trajectory_ids != list(range(self.num_envs)):
++                raise ValueError('Holdout manifest trajectory_id values must be ordered 0..N-1')
++            self.holdout_manifest_sha256 = hashlib.sha256(manifest_bytes).hexdigest()
++            self.holdout_protocol = holdout_manifest.get('protocol')
++            self.holdout_perturbations = perturbations
++            print('Holdout manifest SHA256: {}'.format(self.holdout_manifest_sha256))
+         # all_scales = set()
+ 
+         self.repose_z = self.cfg['env']['repose_z']
+@@ -495,6 +522,19 @@ class ShadowHandGraspDexRepIjrr(BaseTask):
+             obj_half_height, pcd = self.get_obj_half_height(scale, obj_rotmat)
+             # self.obj_half_height_list.append(obj_half_height)
+             object_start_pose = self.set_obj_start_root_state(obj_half_height, obj_rotmat)
++            if self.holdout_perturbations is not None:
++                perturbation = self.holdout_perturbations[i]
++                object_start_pose.p.x += float(perturbation['position_x_m'])
++                object_start_pose.p.y += float(perturbation['position_y_m'])
++                base_rotation = R.from_quat([
++                    object_start_pose.r.x,
++                    object_start_pose.r.y,
++                    object_start_pose.r.z,
++                    object_start_pose.r.w,
++                ])
++                yaw_rotation = R.from_euler('z', float(perturbation['yaw_deg']), degrees=True)
++                perturbed_quat = (yaw_rotation * base_rotation).as_quat()
++                object_start_pose.r = gymapi.Quat(*perturbed_quat)
+             object_handle = self._load_object(env_ptr, goal_start_pose, i, object_asset_dict, object_idx_this_env, object_start_pose, scale)
+             # DexRep or pnG load object
+             # assert len(self.object_code_list) == 1
+@@ -539,11 +579,14 @@ class ShadowHandGraspDexRepIjrr(BaseTask):
+             table_shape_props = self.gym.get_actor_rigid_shape_properties(env_ptr, table_handle)
+             object_shape_props = self.gym.get_actor_rigid_shape_properties(env_ptr, object_handle)
+             table_shape_props[0].friction = 1
+-            if self.cfg['env']['random_obj_mass_friction']:
++            if self.holdout_perturbations is not None:
++                friction = float(self.holdout_perturbations[i]['friction'])
++            elif self.cfg['env']['random_obj_mass_friction']:
+                 friction = random.uniform(0.1, 1.0)
+             else:
+                 friction = self.cfg['env']['obj_friction']
+-            object_shape_props[0].friction = friction #1
++            for object_shape_prop in object_shape_props:
++                object_shape_prop.friction = friction
+             # object_shape_props[0].friction = self.cfg['env']['obj_friction'] #1
+             self.gym.set_actor_rigid_shape_properties(env_ptr, table_handle, table_shape_props)
+             self.gym.set_actor_rigid_shape_properties(env_ptr, object_handle, object_shape_props)
+@@ -552,7 +595,9 @@ class ShadowHandGraspDexRepIjrr(BaseTask):
+             if self.cfg["env"]["set_obj_mass"]:
+                 object_body_props = self.gym.get_actor_rigid_body_properties(env_ptr, object_handle)
+                 if len(object_body_props)>=1:
+-                    if self.cfg["env"]['random_obj_mass_friction']:
++                    if self.holdout_perturbations is not None:
++                        obj_mass = float(self.holdout_perturbations[i]['mass_kg'])
++                    elif self.cfg["env"]['random_obj_mass_friction']:
+                         obj_mass = random.uniform(0.05, 0.5)
+                     else:
+                         obj_mass = self.cfg["env"]["obj_mass"]
 diff --git a/dexgrasp/train_bc_lighting_dexrep.py b/dexgrasp/train_bc_lighting_dexrep.py
 index a916829..690992e 100644
 --- a/dexgrasp/train_bc_lighting_dexrep.py
@@ -396,7 +482,7 @@ index f3d6f6e..f2bfd8e 100644
  class HandModel:
      def __init__(self, mjcf_path, mesh_path, contact_points_path, penetration_points_path, n_surface_points=0, device='cpu',use_joint21=False):
 diff --git a/dexgrasp/utils/test_env.py b/dexgrasp/utils/test_env.py
-index 0eadf00..68cd866 100644
+index 0eadf00..e35914a 100644
 --- a/dexgrasp/utils/test_env.py
 +++ b/dexgrasp/utils/test_env.py
 @@ -1,12 +1,16 @@
@@ -590,7 +676,7 @@ index 0eadf00..68cd866 100644
          reward_sum.extend(cur_reward_sum[new_ids][:, 0].cpu().numpy().tolist())
          episode_length.extend(cur_episode_length[new_ids][:, 0].cpu().numpy().tolist())
          # successes.extend(infos['successes'][new_ids.cpu()][:, 0].cpu().numpy().tolist())
-@@ -203,6 +291,68 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+@@ -203,6 +291,73 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
      #     np.save('./results/{}.npy'.format(obj_id), data_dict, allow_pickle=True)
  
  
@@ -603,14 +689,17 @@ index 0eadf00..68cd866 100644
 +    success = success_step >= 0
 +    trajectory_metrics = []
 +    for trajectory_id in range(task.num_envs):
-+        trajectory_metrics.append({
++        trajectory_metric = {
 +            'trajectory_id': int(trajectory_id),
 +            'success': bool(success[trajectory_id]),
 +            'success_step': int(success_step[trajectory_id]),
 +            'max_lift_m': float(max_lift_m[trajectory_id]),
 +            'final_lift_m': float(final_lift_m[trajectory_id]),
 +            'normalized_lift_score': float(np.clip(max_lift_m[trajectory_id] / 0.30, 0.0, 1.0)),
-+        })
++        }
++        if getattr(task, 'holdout_perturbations', None) is not None:
++            trajectory_metric['holdout_perturbation'] = task.holdout_perturbations[trajectory_id]
++        trajectory_metrics.append(trajectory_metric)
 +
 +    rollout_metrics = {
 +        'object_code': obj_id,
@@ -626,6 +715,8 @@ index 0eadf00..68cd866 100644
 +        'ensemble_size': int(os.environ.get('DEXGRASP_ENSEMBLE_SIZE', '1')),
 +        'policy_inference_mean_ms': float(np.mean(policy_inference_ms)),
 +        'policy_inference_p95_ms': float(np.percentile(policy_inference_ms, 95)),
++        'holdout_manifest_sha256': getattr(task, 'holdout_manifest_sha256', None),
++        'holdout_protocol': getattr(task, 'holdout_protocol', None),
 +        'metric_definitions': {
 +            'max_lift_m': 'maximum object z displacement relative to rollout step 0',
 +            'final_lift_m': 'final object z displacement relative to rollout step 0',
