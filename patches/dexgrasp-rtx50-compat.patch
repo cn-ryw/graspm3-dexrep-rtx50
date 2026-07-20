@@ -70,23 +70,68 @@ index 022494d..235f16d 100644
                  val = val.reshape(N * T, *val.shape[2:])  # (N*T, ...)
              if key != 'obj_code_idx' and self.is_pad and self.args.n_obs_steps > 1:
 diff --git a/dexgrasp/bc_env_infer.py b/dexgrasp/bc_env_infer.py
-index e814249..2754c9b 100644
+index e814249..1e2f89f 100644
 --- a/dexgrasp/bc_env_infer.py
 +++ b/dexgrasp/bc_env_infer.py
-@@ -45,7 +45,11 @@ def create_bc_model(base_path):
+@@ -12,8 +12,19 @@ from ActionDiffusion.bc.model.policy.lhm_policy import LitBCModel
+ from dexgrasp.utils.test_env import test_env
+ from utils.info_summary_print import save_results_summary
  
-     bc_model = LitBCModel(bc_args, env_args.env)
-     bc_model = bc_model.to(args.rl_device)
+-import torch
+-import json
++import torch
++
++
++class MeanActionPolicy(torch.nn.Module):
++    """Average deterministic actions from independently trained BC policies."""
++
++    def __init__(self, policies):
++        super().__init__()
++        self.policies = torch.nn.ModuleList(policies)
++
++    def act_inference(self, observations):
++        actions = [policy.act_inference(observations) for policy in self.policies]
++        return torch.stack(actions, dim=0).mean(dim=0)
+ 
+ def create_env():
+     if args.num_objs != -1:
+@@ -43,18 +54,36 @@ def create_bc_model(base_path):
+     elif bc_model_name=='ActorCriticDexRep':
+         env_args.env.obs_dim.pop('pnG')
+ 
+-    bc_model = LitBCModel(bc_args, env_args.env)
+-    bc_model = bc_model.to(args.rl_device)
 -    bc_args.policy.checkpoints = osp.join(base_path, bc_args.policy.checkpoints.split('DexRep_Isaac_ijrr/')[-1])
-+    runtime_checkpoint = os.environ.get('DEXGRASP_CHECKPOINT')
-+    if runtime_checkpoint:
-+        bc_args.policy.checkpoints = runtime_checkpoint
-+    else:
-+        bc_args.policy.checkpoints = osp.join(base_path, bc_args.policy.checkpoints.split('DexRep_Isaac_ijrr/')[-1])
-     ckpt = torch.load(bc_args.policy.checkpoints, map_location=torch.device(args.rl_device))
-     bc_model.load_state_dict(ckpt['state_dict'])
- 
-@@ -54,7 +58,7 @@ def create_bc_model(base_path):
+-    ckpt = torch.load(bc_args.policy.checkpoints, map_location=torch.device(args.rl_device))
+-    bc_model.load_state_dict(ckpt['state_dict'])
+-
+-    snapshot_names = os.path.basename(bc_args.policy.checkpoints).split('.')[0]+'_'+bc_args.policy.checkpoints.split('/')[-2]
++    runtime_checkpoints = [
++        item for item in os.environ.get('DEXGRASP_CHECKPOINTS', '').split(',') if item
++    ]
++    if not runtime_checkpoints:
++        runtime_checkpoint = os.environ.get('DEXGRASP_CHECKPOINT')
++        if runtime_checkpoint:
++            runtime_checkpoints = [runtime_checkpoint]
++        else:
++            runtime_checkpoints = [
++                osp.join(base_path, bc_args.policy.checkpoints.split('DexRep_Isaac_ijrr/')[-1])
++            ]
++
++    members = []
++    for checkpoint_path in runtime_checkpoints:
++        member = LitBCModel(bc_args, env_args.env).to(args.rl_device)
++        checkpoint = torch.load(checkpoint_path, map_location=torch.device(args.rl_device))
++        member.load_state_dict(checkpoint['state_dict'])
++        members.append(member)
++    bc_model = members[0]
++    if len(members) > 1:
++        bc_model.model = MeanActionPolicy([member.model for member in members])
++    os.environ['DEXGRASP_ENSEMBLE_SIZE'] = str(len(members))
++
++    checkpoint_name = os.path.basename(runtime_checkpoints[0])
++    snapshot_names = checkpoint_name.split('.')[0] + '_ensemble{}'.format(len(members))
+     bc_info_name= cfg['env']['obj_type']+'_'+snapshot_names #+'_'bc_model_name
  
      return bc_model, bc_model_name, bc_info_name
  
@@ -95,7 +140,7 @@ index e814249..2754c9b 100644
      base_path = '../'
      if mode=='seen' or 'one':
          obj_id_list =cfg['env']['seen_object_code_dict']
-@@ -65,7 +69,8 @@ def run(mode='seen'):
+@@ -65,7 +94,8 @@ def run(mode='seen'):
      bc_info_name=bc_info_name+'_'+'test_num{}'.format(cfg['env']['test_num'])
      cfg['env']['bc_model_name'] = bc_model_name
  
@@ -105,7 +150,7 @@ index e814249..2754c9b 100644
      print('bc info: {}'.format(bc_info_name))
      batch_size = cfg['env']['infer_batch_size']
      num_full_batches = len(obj_id_list) // batch_size
-@@ -76,27 +81,44 @@ def run(mode='seen'):
+@@ -76,27 +106,44 @@ def run(mode='seen'):
          obj_glob_feat = None
          task, env = create_env()
  
@@ -351,10 +396,10 @@ index f3d6f6e..f2bfd8e 100644
  class HandModel:
      def __init__(self, mjcf_path, mesh_path, contact_points_path, penetration_points_path, n_surface_points=0, device='cpu',use_joint21=False):
 diff --git a/dexgrasp/utils/test_env.py b/dexgrasp/utils/test_env.py
-index 0eadf00..9b07d6b 100644
+index 0eadf00..68cd866 100644
 --- a/dexgrasp/utils/test_env.py
 +++ b/dexgrasp/utils/test_env.py
-@@ -1,12 +1,15 @@
+@@ -1,12 +1,16 @@
 -import torch
 -import statistics
 -import torch.nn.functional as F
@@ -367,6 +412,7 @@ index 0eadf00..9b07d6b 100644
 +import numpy as np
 +import json
 +import os
++import time
 +from pathlib import Path
  
  
@@ -376,7 +422,7 @@ index 0eadf00..9b07d6b 100644
      """
      observation =(N,2582) or (n_obs_steps, N, 2582)
      """
-@@ -33,7 +36,75 @@ def obs_process(observation,pro_dim=128):
+@@ -33,7 +37,75 @@ def obs_process(observation,pro_dim=128):
  
      mask = ~torch.isin(all_indices, final_indice_remove)
      filter_observation = observation[...,mask]
@@ -453,7 +499,7 @@ index 0eadf00..9b07d6b 100644
  
  @torch.no_grad()
  def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_gt=False, use_part_gt=False):
-@@ -49,9 +120,13 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+@@ -49,9 +121,13 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
      cur_success = torch.zeros(task.num_envs, dtype=torch.float, device=args.rl_device)
      cur_success_done_sum = torch.zeros(task.num_envs, dtype=torch.float, device=args.rl_device)
  
@@ -469,26 +515,41 @@ index 0eadf00..9b07d6b 100644
      # current_obs_state= traj_obs[:,0]
      if current_obs_state.shape[-1]==2582:
          current_obs_state = obs_process(current_obs_state,pro_dim=pro_dim) #2582->2488 if LitDP3Model: (2,N, 2488); LitBCModel: (N, 2488)
-@@ -76,7 +151,8 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+@@ -76,7 +152,9 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
              a=1
  
      pred_actions = []
 -    sim_actions = []
 +    sim_actions = []
 +    last_printed_success = -1
++    policy_inference_ms = []
  
  
      while len(reward_sum) < maxlen:
-@@ -91,7 +167,7 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+@@ -84,16 +162,18 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+         # ep_infos = []
+         # actions, state, obs_feat = actor.act_inference(current_obs_state)
+ 
+-        if model.__class__.__name__ == 'LitDP3Model':
++        inference_started = time.perf_counter()
++        if model.__class__.__name__ == 'LitDP3Model':
+             input_dict = {'obs': current_obs_state}
+             if model.args.use_orig_encoder:
+                 input_dict['actions']=unactions
              actions_dict = model.model.predict_action(input_dict) #obs: (N,2, 2488) actions: (N,3, 28)
              actions = actions_dict['natcion'].squeeze(0).transpose(0,1) #actions: (3,N, 28)naction_pred
  
 -        elif model.__class__.__name__ == 'LitBCModel':
+-            actions = model.model.act_inference(current_obs_state)
+-            a=1
 +        elif model.__class__.__name__ == 'LitBCModel':
-             actions = model.model.act_inference(current_obs_state)
-             a=1
++            actions = model.model.act_inference(current_obs_state)
++            a=1
++        policy_inference_ms.append((time.perf_counter() - inference_started) * 1000.0)
          actions = actions.clamp(-1,1)
-@@ -120,8 +196,10 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+         if use_gt or use_part_gt:
+             if use_part_gt and i>5:
+@@ -120,8 +200,10 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
          elif model.__class__.__name__ == 'LitBCModel':
              if i>30 and env.task.cfg['env']['use_pre_fixed_actions']: #40
                  actions = env.task.get_pre_target_actions(actions,i)
@@ -501,7 +562,7 @@ index 0eadf00..9b07d6b 100644
              # next_obs = traj_obs[:, i]
  
          # next_obs_gt = obs_process(traj_obs[:,i+1],pro_dim=pro_dim)
-@@ -158,14 +236,20 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+@@ -158,14 +240,20 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
          new_ids = (dones > 0).nonzero(as_tuple=False)
          success_ = torch.where(task.successes==1)[0]*1 #(B, )
  
@@ -529,7 +590,7 @@ index 0eadf00..9b07d6b 100644
          reward_sum.extend(cur_reward_sum[new_ids][:, 0].cpu().numpy().tolist())
          episode_length.extend(cur_episode_length[new_ids][:, 0].cpu().numpy().tolist())
          # successes.extend(infos['successes'][new_ids.cpu()][:, 0].cpu().numpy().tolist())
-@@ -203,6 +287,65 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
+@@ -203,6 +291,68 @@ def test_env(args, task, env, model, bc_model_name,obj_id, global_feat=None,use_
      #     np.save('./results/{}.npy'.format(obj_id), data_dict, allow_pickle=True)
  
  
@@ -562,6 +623,9 @@ index 0eadf00..9b07d6b 100644
 +        'mean_max_lift_m': float(max_lift_m.mean()),
 +        'mean_final_lift_m': float(final_lift_m.mean()),
 +        'mean_normalized_lift_score': float(np.clip(max_lift_m / 0.30, 0.0, 1.0).mean()),
++        'ensemble_size': int(os.environ.get('DEXGRASP_ENSEMBLE_SIZE', '1')),
++        'policy_inference_mean_ms': float(np.mean(policy_inference_ms)),
++        'policy_inference_p95_ms': float(np.percentile(policy_inference_ms, 95)),
 +        'metric_definitions': {
 +            'max_lift_m': 'maximum object z displacement relative to rollout step 0',
 +            'final_lift_m': 'final object z displacement relative to rollout step 0',

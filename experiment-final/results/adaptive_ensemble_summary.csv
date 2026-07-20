@@ -1,0 +1,4 @@
+object,display_name,selected_method,ensemble_size,successes,trajectories,success_rate,checkpoint_evaluation_normalized_lift_score,policy_inference_mean_ms,policy_inference_p95_ms
+jar,Jar,wrist4,3,7,20,0.35,0.358338862657547,2.462418983638793,3.048385500187578
+cellphone,Cellphone,wrist4,3,6,20,0.3,0.33718371391296387,2.4575846803480865,2.9130085496035463
+usb_stick,USB stick,baseline,3,3,20,0.15,0.15059413015842438,2.455236065558341,2.9906694496276027
