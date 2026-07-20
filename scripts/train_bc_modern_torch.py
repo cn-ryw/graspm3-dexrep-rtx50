@@ -18,7 +18,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as functional
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 
 
 def observation_mask(pro_dim: int = 100) -> np.ndarray:
@@ -60,12 +60,20 @@ def load_split(paths: list[Path]) -> tuple[torch.Tensor, torch.Tensor]:
 
 def load_sequence_split(
     paths: list[Path], valid_fraction: float, seed: int,
-) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, dict[str, dict[str, int]]]:
+) -> tuple[
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    torch.Tensor,
+    dict[str, dict[str, int]],
+    list[tuple[str, int]],
+]:
     rng = np.random.default_rng(seed)
     train_observations: list[np.ndarray] = []
     train_actions: list[np.ndarray] = []
     valid_observations: list[np.ndarray] = []
     valid_actions: list[np.ndarray] = []
+    train_sequence_refs: list[tuple[str, int]] = []
     split_summary = {}
     for path in paths:
         observations, actions = load_sequences(path)
@@ -76,6 +84,10 @@ def load_sequence_split(
         train_indices = indices[valid_count:]
         train_observations.append(observations[train_indices].reshape(-1, 2460))
         train_actions.append(actions[train_indices].reshape(-1, 28))
+        for sequence_index in train_indices:
+            train_sequence_refs.extend(
+                [(path.stem, int(sequence_index))] * observations.shape[1]
+            )
         valid_observations.append(observations[valid_indices].reshape(-1, 2460))
         valid_actions.append(actions[valid_indices].reshape(-1, 28))
         split_summary[path.stem] = {
@@ -91,7 +103,60 @@ def load_sequence_split(
         torch.from_numpy(np.concatenate(valid_observations)),
         torch.from_numpy(np.concatenate(valid_actions)),
         split_summary,
+        train_sequence_refs,
     )
+
+
+def load_pose_hard_frame_weights(
+    manifest_path: Path,
+    split_hash: str,
+    train_sequence_refs: list[tuple[str, int]],
+) -> tuple[torch.Tensor, dict]:
+    manifest_bytes = manifest_path.read_bytes()
+    manifest = json.loads(manifest_bytes)
+    if manifest.get("protocol") != "pose_stratified_hard_resampling_v1":
+        raise ValueError("Unsupported sampler manifest protocol")
+
+    object_entries = manifest.get("objects", {})
+    sequence_weights: dict[tuple[str, int], float] = {}
+    object_metadata = None
+    object_codes = {object_code for object_code, _ in train_sequence_refs}
+    if len(object_codes) != 1:
+        raise ValueError("Pose-hard sampling currently requires exactly one object")
+    object_code = next(iter(object_codes))
+    if object_code not in object_entries:
+        raise ValueError(f"Sampler manifest has no entry for {object_code}")
+    object_metadata = object_entries[object_code]
+    if object_metadata.get("split_hash") != split_hash:
+        raise ValueError(
+            "Sampler manifest split hash does not match the current complete-sequence split"
+        )
+    for row in object_metadata.get("train_sequences", []):
+        key = (object_code, int(row["sequence_index"]))
+        weight = float(row["sampling_weight"])
+        if not np.isfinite(weight) or weight <= 0:
+            raise ValueError(f"Invalid sampling weight for {key}: {weight}")
+        sequence_weights[key] = weight
+
+    missing = sorted(set(train_sequence_refs) - set(sequence_weights))
+    extra = sorted(set(sequence_weights) - set(train_sequence_refs))
+    if missing or extra:
+        raise ValueError(
+            f"Sampler manifest sequence mismatch; missing={missing}, extra={extra}"
+        )
+    frame_weights = torch.tensor(
+        [sequence_weights[ref] for ref in train_sequence_refs], dtype=torch.double,
+    )
+    metadata = {
+        "strategy": "pose_stratified_hard_resampling",
+        "manifest": str(manifest_path),
+        "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+        "pose_threshold_deg": manifest["parameters"]["pose_threshold_deg"],
+        "hardness_strength": manifest["parameters"]["hardness_strength"],
+        "sequence_weight_min": float(frame_weights.min()),
+        "sequence_weight_max": float(frame_weights.max()),
+    }
+    return frame_weights, metadata
 
 
 class DexRepBC(nn.Module):
@@ -180,6 +245,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--wrist-weight", type=float, default=2.0)
     parser.add_argument("--milestone-epochs", default="1,5,10,25,50,100")
     parser.add_argument("--patience", type=int, default=0)
+    parser.add_argument("--sampler-manifest", type=Path)
     return parser.parse_args()
 
 
@@ -210,15 +276,21 @@ def main() -> None:
         torch.cuda.manual_seed_all(args.seed)
 
     split_summary = None
+    train_sequence_refs = None
     if args.data_dir is not None:
         data_paths = sorted(args.data_dir.glob("*.npy"))
         if args.object_code:
             data_paths = [path for path in data_paths if path.stem == args.object_code]
         if not data_paths:
             raise RuntimeError("The data directory must contain .npy files")
-        train_obs, train_actions, valid_obs, valid_actions, split_summary = load_sequence_split(
-            data_paths, args.valid_fraction, args.split_seed,
-        )
+        (
+            train_obs,
+            train_actions,
+            valid_obs,
+            valid_actions,
+            split_summary,
+            train_sequence_refs,
+        ) = load_sequence_split(data_paths, args.valid_fraction, args.split_seed)
         train_paths = data_paths
         valid_paths = data_paths
     else:
@@ -230,9 +302,28 @@ def main() -> None:
             raise RuntimeError("Both train and validation directories must contain .npy files")
         train_obs, train_actions = load_split(train_paths)
         valid_obs, valid_actions = load_split(valid_paths)
+    split_json = json.dumps(split_summary, sort_keys=True, separators=(",", ":"))
+    split_hash = hashlib.sha256(split_json.encode("utf-8")).hexdigest()
+    sampling_metadata = {"strategy": "uniform"}
+    train_sampler = None
+    if args.sampler_manifest is not None:
+        if train_sequence_refs is None:
+            raise ValueError("--sampler-manifest requires --data-dir complete-sequence splitting")
+        frame_weights, sampling_metadata = load_pose_hard_frame_weights(
+            args.sampler_manifest, split_hash, train_sequence_refs,
+        )
+        sampler_generator = torch.Generator()
+        sampler_generator.manual_seed(args.seed)
+        train_sampler = WeightedRandomSampler(
+            frame_weights,
+            num_samples=len(train_obs),
+            replacement=True,
+            generator=sampler_generator,
+        )
     train_loader = DataLoader(
         TensorDataset(train_obs, train_actions), batch_size=args.batch_size,
-        shuffle=True, pin_memory=device.type == "cuda",
+        shuffle=train_sampler is None, sampler=train_sampler,
+        pin_memory=device.type == "cuda",
     )
     valid_loader = DataLoader(
         TensorDataset(valid_obs, valid_actions), batch_size=args.batch_size,
@@ -246,8 +337,6 @@ def main() -> None:
     })
     if any(epoch < 1 or epoch > args.epochs for epoch in milestone_epochs):
         raise ValueError("Milestone epochs must be within [1, --epochs]")
-    split_json = json.dumps(split_summary, sort_keys=True, separators=(",", ":"))
-    split_hash = hashlib.sha256(split_json.encode("utf-8")).hexdigest()
     experiment_metadata = {
         "object_code": args.object_code,
         "seed": args.seed,
@@ -257,6 +346,7 @@ def main() -> None:
         "valid_fraction": args.valid_fraction,
         "batch_size": args.batch_size,
         "learning_rate": args.lr,
+        "sampling": sampling_metadata,
     }
     started = time.perf_counter()
     last_train_loss = float("nan")
@@ -345,6 +435,7 @@ def main() -> None:
         "split_seed": args.split_seed,
         "wrist_weight": args.wrist_weight,
         "milestone_epochs": milestone_epochs,
+        "sampling": sampling_metadata,
     }
     metrics_output.write_text(json.dumps({"result": result, "history": history}, indent=2, sort_keys=True))
     print("RESULT_JSON=" + json.dumps(result, sort_keys=True), flush=True)

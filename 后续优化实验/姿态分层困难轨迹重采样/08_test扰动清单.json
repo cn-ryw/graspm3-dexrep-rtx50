@@ -1,0 +1,190 @@
+{
+  "bounds": {
+    "friction": [
+      0.8,
+      1.2
+    ],
+    "mass_kg": [
+      0.16,
+      0.24
+    ],
+    "position_x_m": [
+      -0.008,
+      0.008
+    ],
+    "position_y_m": [
+      -0.008,
+      0.008
+    ],
+    "yaw_deg": [
+      -8.0,
+      8.0
+    ]
+  },
+  "generation": "independent Latin-hypercube dimensions; generated before all holdout rollouts",
+  "protocol": "frozen_combined_pose_friction_mass_holdout_v1",
+  "seed": 20260722,
+  "trajectories": [
+    {
+      "friction": 0.850144297,
+      "mass_kg": 0.222840851,
+      "position_x_m": -0.007401298,
+      "position_y_m": 0.004873903,
+      "trajectory_id": 0,
+      "yaw_deg": -3.890937219
+    },
+    {
+      "friction": 1.149818084,
+      "mass_kg": 0.209973356,
+      "position_x_m": -0.003373098,
+      "position_y_m": 0.007176204,
+      "trajectory_id": 1,
+      "yaw_deg": -2.518744871
+    },
+    {
+      "friction": 0.920961657,
+      "mass_kg": 0.213234732,
+      "position_x_m": 0.005292292,
+      "position_y_m": -0.001240466,
+      "trajectory_id": 2,
+      "yaw_deg": -2.378550367
+    },
+    {
+      "friction": 1.182205132,
+      "mass_kg": 0.236861839,
+      "position_x_m": 0.006651694,
+      "position_y_m": 0.004681981,
+      "trajectory_id": 3,
+      "yaw_deg": 2.67890069
+    },
+    {
+      "friction": 1.13557105,
+      "mass_kg": 0.164918222,
+      "position_x_m": 0.001400472,
+      "position_y_m": 0.007735208,
+      "trajectory_id": 4,
+      "yaw_deg": -7.420509286
+    },
+    {
+      "friction": 1.038254056,
+      "mass_kg": 0.204807918,
+      "position_x_m": -0.002577018,
+      "position_y_m": 0.003737947,
+      "trajectory_id": 5,
+      "yaw_deg": 1.004906231
+    },
+    {
+      "friction": 1.109348699,
+      "mass_kg": 0.194440449,
+      "position_x_m": -0.005271862,
+      "position_y_m": -0.006685451,
+      "trajectory_id": 6,
+      "yaw_deg": 5.174819191
+    },
+    {
+      "friction": 0.993761022,
+      "mass_kg": 0.232399526,
+      "position_x_m": 0.00722752,
+      "position_y_m": -0.00474462,
+      "trajectory_id": 7,
+      "yaw_deg": 7.642108551
+    },
+    {
+      "friction": 0.8105612,
+      "mass_kg": 0.179825174,
+      "position_x_m": 0.000292458,
+      "position_y_m": 0.000119985,
+      "trajectory_id": 8,
+      "yaw_deg": -1.249116159
+    },
+    {
+      "friction": 0.8832974,
+      "mass_kg": 0.231296168,
+      "position_x_m": 0.001869204,
+      "position_y_m": 0.005950778,
+      "trajectory_id": 9,
+      "yaw_deg": -4.866397747
+    },
+    {
+      "friction": 0.820846285,
+      "mass_kg": 0.22544997,
+      "position_x_m": 0.005920901,
+      "position_y_m": -0.000603824,
+      "trajectory_id": 10,
+      "yaw_deg": 5.697833057
+    },
+    {
+      "friction": 0.94935833,
+      "mass_kg": 0.182842697,
+      "position_x_m": -0.006439614,
+      "position_y_m": -0.001903763,
+      "trajectory_id": 11,
+      "yaw_deg": -5.804828262
+    },
+    {
+      "friction": 1.056560927,
+      "mass_kg": 0.187339176,
+      "position_x_m": 0.004207459,
+      "position_y_m": -0.00562129,
+      "trajectory_id": 12,
+      "yaw_deg": 4.642343615
+    },
+    {
+      "friction": 1.07479483,
+      "mass_kg": 0.160662765,
+      "position_x_m": 0.002436137,
+      "position_y_m": 0.00182058,
+      "trajectory_id": 13,
+      "yaw_deg": -4.684888854
+    },
+    {
+      "friction": 0.903138597,
+      "mass_kg": 0.217027631,
+      "position_x_m": 0.003745518,
+      "position_y_m": -0.007675727,
+      "trajectory_id": 14,
+      "yaw_deg": 6.834134563
+    },
+    {
+      "friction": 1.009310341,
+      "mass_kg": 0.172605694,
+      "position_x_m": -0.000604166,
+      "position_y_m": 0.002878709,
+      "trajectory_id": 15,
+      "yaw_deg": 0.331734516
+    },
+    {
+      "friction": 0.966599718,
+      "mass_kg": 0.190763791,
+      "position_x_m": -0.001128676,
+      "position_y_m": 0.001054603,
+      "trajectory_id": 16,
+      "yaw_deg": -7.029275972
+    },
+    {
+      "friction": 1.168140758,
+      "mass_kg": 0.200859323,
+      "position_x_m": -0.004003552,
+      "position_y_m": -0.005352865,
+      "trajectory_id": 17,
+      "yaw_deg": 2.049627703
+    },
+    {
+      "friction": 0.862952706,
+      "mass_kg": 0.17165873,
+      "position_x_m": -0.001898174,
+      "position_y_m": -0.00327542,
+      "trajectory_id": 18,
+      "yaw_deg": -0.488342499
+    },
+    {
+      "friction": 1.085019164,
+      "mass_kg": 0.197917879,
+      "position_x_m": -0.005899372,
+      "position_y_m": -0.002703774,
+      "trajectory_id": 19,
+      "yaw_deg": 3.976524631
+    }
+  ],
+  "trajectory_count": 20
+}

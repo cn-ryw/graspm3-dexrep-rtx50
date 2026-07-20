@@ -1,0 +1,47 @@
+protocol: pose-stratified-hard-resampling-v1
+status: rejected_negative_result
+date: 2026-07-20
+change:
+  only_change: training sampling probability
+  pose_source: DexRep cache obj_rotmat
+  pose_threshold_deg: 15
+  hard_factor: 1 + development_failure_rate_across_3_baseline_seeds
+  pose_factor: inverse_training_stratum_frequency
+  replacement: true
+  samples_per_epoch: unchanged
+  normalized_mean_sequence_weight: 1
+  max_sequence_weight: 3
+fair_training:
+  split_unit: complete_sequence
+  split_seed: 0
+  validation_fraction: 0.2
+  seeds: [0, 1, 2]
+  wrist_weight: 2
+  batch_size: 256
+  learning_rate: 0.0002
+  max_epochs: 200
+  validation_patience: 30
+  checkpoint_selection: minimum_validation_loss
+split_hashes:
+  jar: f67654f278a03c0d5b8db1dc6341b755f9e3f6c27e35129f6d8a19e45c8b1f63
+  cellphone: 3af790670782415e0a3d1fdfdd086991f45b825155f3a5932da3644a4bdef6b7
+  usb_stick: 7eeb7be102fa442e7d2cedaea52073cb2d14f2610447a9528cf448933b0e785d
+manifests:
+  sampler_sha256: 67599f54ed3da641413fdc2a56ae13ea6e1d6ac00e2e9e155f2dae30e320c7b2
+  development_seed: 20260721
+  development_sha256: f85068a480d0040fb1654238a272c63e138def44727c1a1884abdec900db8b05
+  test_seed: 20260722
+  test_sha256: aca36ca6f0656d2e39c95a3a4f756466d151a36c377f1d31b243e6543813e315
+  historical_holdout_sha256: 8cec9bee7170c47782b8d6e19662f5698840b9958ed06449350c89fc788c020d
+targets:
+  aggregate_success_rate_at_least: 0.25
+  usb_stick_success_rate_at_least: 0.15
+test_result:
+  baseline_successes: 29
+  baseline_trials: 180
+  method_successes: 13
+  method_trials: 180
+  method_success_rate: 0.07222222222222222
+  usb_stick_success_rate: 0.06666666666666667
+  aggregate_target_met: false
+  usb_target_met: false

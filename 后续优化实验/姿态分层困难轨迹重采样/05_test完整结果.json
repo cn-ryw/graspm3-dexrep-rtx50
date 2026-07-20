@@ -1,0 +1,147 @@
+{
+  "aggregate": {
+    "baseline_mean_normalized_lift_score": 0.17003768185774484,
+    "baseline_success_rate": 0.16111111111111112,
+    "baseline_successes": 29,
+    "delta_percentage_points": -8.88888888888889,
+    "method_mean_normalized_lift_score": 0.09096882306039333,
+    "method_success_rate": 0.07222222222222222,
+    "method_successes": 13,
+    "object": "aggregate",
+    "trials": 180
+  },
+  "label": "test",
+  "manifest": "configs/pose_resampling_test_v1.json",
+  "manifest_sha256": "aca36ca6f0656d2e39c95a3a4f756466d151a36c377f1d31b243e6543813e315",
+  "objects": {
+    "cellphone": {
+      "baseline_mean_normalized_lift_score": 0.08283778093755245,
+      "baseline_success_rate": 0.06666666666666667,
+      "baseline_successes": 4,
+      "delta_percentage_points": -1.6666666666666667,
+      "method_mean_normalized_lift_score": 0.07892101878921191,
+      "method_success_rate": 0.05,
+      "method_successes": 3,
+      "object": "cellphone",
+      "seeds": [
+        {
+          "baseline_success_rate": 0.0,
+          "baseline_successes": 0,
+          "method_success_rate": 0.0,
+          "method_successes": 0,
+          "seed": 0
+        },
+        {
+          "baseline_success_rate": 0.05,
+          "baseline_successes": 1,
+          "method_success_rate": 0.05,
+          "method_successes": 1,
+          "seed": 1
+        },
+        {
+          "baseline_success_rate": 0.15,
+          "baseline_successes": 3,
+          "method_success_rate": 0.1,
+          "method_successes": 2,
+          "seed": 2
+        }
+      ],
+      "trials": 60
+    },
+    "jar": {
+      "baseline_mean_normalized_lift_score": 0.3077059853821993,
+      "baseline_success_rate": 0.3,
+      "baseline_successes": 18,
+      "delta_percentage_points": -20.0,
+      "method_mean_normalized_lift_score": 0.1174361128360033,
+      "method_success_rate": 0.1,
+      "method_successes": 6,
+      "object": "jar",
+      "seeds": [
+        {
+          "baseline_success_rate": 0.45,
+          "baseline_successes": 9,
+          "method_success_rate": 0.1,
+          "method_successes": 2,
+          "seed": 0
+        },
+        {
+          "baseline_success_rate": 0.0,
+          "baseline_successes": 0,
+          "method_success_rate": 0.2,
+          "method_successes": 4,
+          "seed": 1
+        },
+        {
+          "baseline_success_rate": 0.45,
+          "baseline_successes": 9,
+          "method_success_rate": 0.0,
+          "method_successes": 0,
+          "seed": 2
+        }
+      ],
+      "trials": 60
+    },
+    "usb_stick": {
+      "baseline_mean_normalized_lift_score": 0.11956927925348282,
+      "baseline_success_rate": 0.11666666666666667,
+      "baseline_successes": 7,
+      "delta_percentage_points": -5.0,
+      "method_mean_normalized_lift_score": 0.07654933755596478,
+      "method_success_rate": 0.06666666666666667,
+      "method_successes": 4,
+      "object": "usb_stick",
+      "seeds": [
+        {
+          "baseline_success_rate": 0.15,
+          "baseline_successes": 3,
+          "method_success_rate": 0.05,
+          "method_successes": 1,
+          "seed": 0
+        },
+        {
+          "baseline_success_rate": 0.05,
+          "baseline_successes": 1,
+          "method_success_rate": 0.1,
+          "method_successes": 2,
+          "seed": 1
+        },
+        {
+          "baseline_success_rate": 0.15,
+          "baseline_successes": 3,
+          "method_success_rate": 0.05,
+          "method_successes": 1,
+          "seed": 2
+        }
+      ],
+      "trials": 60
+    }
+  },
+  "paired_analysis": {
+    "bootstrap_replicates": 20000,
+    "bootstrap_seed": 20260720,
+    "cluster_definition": "object-trajectory cluster averaged across three fixed training seeds",
+    "normalized_lift_delta": -0.07906885879735151,
+    "normalized_lift_delta_95_percent_ci": [
+      -0.1445287357877802,
+      -0.018105061970375227
+    ],
+    "paired_losses": 26,
+    "paired_ties": 144,
+    "paired_wins": 10,
+    "success_rate_delta_95_percent_ci": [
+      -15.555555555555555,
+      -2.7777777777777777
+    ],
+    "success_rate_delta_percentage_points": -8.88888888888889
+  },
+  "protocol": "pose_stratified_hard_resampling_evaluation_v1",
+  "target_status": {
+    "aggregate_at_least_25_percent": false,
+    "usb_stick_at_least_15_percent": false
+  },
+  "targets": {
+    "aggregate_success_rate": 0.25,
+    "usb_stick_success_rate": 0.15
+  }
+}
