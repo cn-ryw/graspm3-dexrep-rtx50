@@ -92,11 +92,13 @@ def render_case(
     case_dir.mkdir(parents=True, exist_ok=True)
 
     frames = []
+    method_label = run["method"].replace(
+        "holdout_adaptive_ensemble_", "holdout ensemble / "
+    ).replace("adaptive_ensemble_", "ensemble / ")
     for index, step in enumerate(frame_steps):
         title = (
             f"{OBJECT_LABELS.get(run['object_code'], run['object_code'])} | "
-            f"{run['method']} | seed {run['seed']} | "
-            f"{case} | step {step}"
+            f"{method_label}\nseed {run['seed']} | {case} | step {step}"
         )
         frames.append(render_frame(hand_points[index], object_points[index], title))
 
