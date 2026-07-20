@@ -1,0 +1,32 @@
+[
+  {
+    "mean_normalized_lift_score": 0.5389801859855652,
+    "method": "wrist4",
+    "object": "jar",
+    "role": "selected_success_source",
+    "seed": 2,
+    "source_metrics": "experiments/final-fair-evaluation/best/wrist4/jar/seed_2/rollout_metrics.json",
+    "success_count": 11,
+    "trajectory_count": 20
+  },
+  {
+    "mean_normalized_lift_score": 0.3673641085624695,
+    "method": "wrist4",
+    "object": "cellphone",
+    "role": "selected_success_source",
+    "seed": 0,
+    "source_metrics": "experiments/final-fair-evaluation/best/wrist4/cellphone/seed_0/rollout_metrics.json",
+    "success_count": 7,
+    "trajectory_count": 20
+  },
+  {
+    "mean_normalized_lift_score": 0.2503949999809265,
+    "method": "baseline",
+    "object": "usb_stick",
+    "role": "selected_success_source",
+    "seed": 2,
+    "source_metrics": "experiments/final-fair-evaluation/best/baseline/usb_stick/seed_2/rollout_metrics.json",
+    "success_count": 5,
+    "trajectory_count": 20
+  }
+]

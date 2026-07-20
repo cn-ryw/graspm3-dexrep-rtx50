@@ -1,0 +1,47 @@
+{
+  "case": "success",
+  "epoch": "best",
+  "method": "baseline",
+  "object_code": "sem-USBStick-e2e75212fefa0ecf30e9a79a761377a4",
+  "render": {
+    "bounds_m": {
+      "x": [
+        -0.28,
+        0.28
+      ],
+      "y": [
+        -0.28,
+        0.28
+      ],
+      "z": [
+        0.42,
+        1.18
+      ]
+    },
+    "camera": {
+      "azimuth_deg": -58,
+      "elevation_deg": 24
+    },
+    "colors": {
+      "hand": "#d95f9f",
+      "object": "#4c78a8"
+    },
+    "fps": 10,
+    "key_steps": {
+      "contact": 28,
+      "end": 122,
+      "lift": 80,
+      "start": 0
+    }
+  },
+  "seed": 2,
+  "source_state_file": "sem-USBStick-e2e75212fefa0ecf30e9a79a761377a4_rollout_states.npz",
+  "trajectory": {
+    "final_lift_m": -0.1592526137828827,
+    "max_lift_m": 0.6130974888801575,
+    "normalized_lift_score": 1.0,
+    "success": true,
+    "success_step": 35,
+    "trajectory_id": 17
+  }
+}
