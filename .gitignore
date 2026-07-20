@@ -12,6 +12,7 @@ isaacgym/
 *.pth
 *.pt
 *.npy
+*.npz
 *.tar
 *.tar.gz
 
